@@ -25,10 +25,26 @@
 <body>
   <img id="meowl-image" src="meowl.png" alt="Meowl">
   <audio id="meowl-audio" src="meowl.mp3" loop></audio>
+  <audio id="meow-sound" src="meow.mp3" preload="auto"></audio>
   <script>
     const audio = document.getElementById("meowl-audio");
-    document.getElementById("meowl-image").addEventListener("click", () => {
-      audio.play();
+    const image = document.getElementById("meowl-image");
+    const meowSound = document.getElementById("meow-sound");
+    let imageResetTimeout;
+
+    image.addEventListener("click", () => {
+      if (audio.paused) {
+        audio.play();
+        return;
+      }
+
+      image.src = "meowl2.png";
+      meowSound.currentTime = 0;
+      meowSound.play();
+      clearTimeout(imageResetTimeout);
+      imageResetTimeout = setTimeout(() => {
+        image.src = "meowl.png";
+      }, 300);
     });
   </script>
 </body>
