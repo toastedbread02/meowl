@@ -102,8 +102,9 @@
       animation: meowl-disco 2s linear infinite;
     }
 
-    #floating-meowls.disco-mode img {
-      animation: meowl-pop 450ms ease-out both, meowl-rainbow 2s linear infinite;
+    #floating-meowls.disco-mode {
+      animation: meowl-rainbow 2s linear infinite;
+      will-change: filter;
     }
 
     @keyframes meowl-disco {
@@ -124,6 +125,8 @@
 
     #floating-meowls img {
       position: absolute;
+      left: 0;
+      top: 0;
       display: block;
       height: auto;
       object-fit: contain;
@@ -133,11 +136,11 @@
     @keyframes meowl-pop {
       from {
         opacity: 0.2;
-        transform: scale(0.1);
+        scale: 0.1;
       }
       100% {
         opacity: 1;
-        transform: scale(1);
+        scale: 1;
       }
     }
 
@@ -157,7 +160,7 @@
     <button type="button" data-event="admin-now">Start admin event now</button>
     <button type="button" data-event="meow">Play meow reaction</button>
     <button type="button" data-event="disco">Disco meowl (30 seconds)</button>
-    <p class="event-warning">Warning: Disco mode has no image limit and may make your browser lag or freeze.</p>
+    <p class="event-warning">Warning: Disco mode has no image limit. Collisions are paced to reduce lag, but many images may still slow your browser.</p>
   </section>
   <script>
     const audio = document.getElementById("meowl-audio");
@@ -197,6 +200,7 @@
     let lastMessage = "free music wow";
     let floatingMeowlMotion = [];
     let activeCollisionPairs = new Set();
+    let lastCollisionBurstAt = -Infinity;
     let animationFrameId;
     let lastAnimationFrame = 0;
 
@@ -232,10 +236,12 @@
       image.classList.add("disco-mode");
       image.style.animationDelay = discoRainbowDelay;
       floatingMeowls.classList.add("disco-mode");
+      floatingMeowls.style.animationDelay = discoRainbowDelay;
       banner.innerText = "meowl disco mode!";
       floatingMeowls.replaceChildren();
       floatingMeowlMotion = [];
       activeCollisionPairs.clear();
+      lastCollisionBurstAt = -Infinity;
       for (let i = 0; i < 2; i += 1) addFloatingMeowl();
       lastAnimationFrame = 0;
       animationFrameId = requestAnimationFrame(moveFloatingMeowls);
@@ -243,6 +249,7 @@
         image.classList.remove("disco-mode");
         image.style.removeProperty("animation-delay");
         floatingMeowls.classList.remove("disco-mode");
+        floatingMeowls.style.removeProperty("animation-delay");
         discoActive = false;
         cancelAnimationFrame(animationFrameId);
         floatingMeowlMotion = [];
@@ -318,9 +325,7 @@
       meowl.alt = "";
       meowl.style.width = `${width}px`;
       meowl.style.height = `${height}px`;
-      meowl.style.left = `${x}px`;
-      meowl.style.top = `${y}px`;
-      if (discoActive) meowl.style.animationDelay = `0ms, ${discoRainbowDelay}`;
+      meowl.style.transform = `translate3d(${x}px, ${y}px, 0)`;
       floatingMeowls.appendChild(meowl);
 
       floatingMeowlMotion.push({
@@ -356,74 +361,92 @@
           meowl.vy *= -1;
         }
 
-        meowl.element.style.left = `${meowl.x}px`;
-        meowl.element.style.top = `${meowl.y}px`;
+        meowl.element.style.transform = `translate3d(${meowl.x}px, ${meowl.y}px, 0)`;
       });
 
       if (discoActive) {
         const collisionsThisFrame = new Set();
         const countAtFrameStart = floatingMeowlMotion.length;
+        const cellSize = 256;
+        const grid = new Map();
+
+        for (let i = 0; i < countAtFrameStart; i += 1) {
+          const meowl = floatingMeowlMotion[i];
+          const cellX = Math.floor((meowl.x + meowl.width / 2) / cellSize);
+          const cellY = Math.floor((meowl.y + meowl.height / 2) / cellSize);
+          const key = `${cellX}:${cellY}`;
+          if (!grid.has(key)) grid.set(key, []);
+          grid.get(key).push(i);
+        }
 
         for (let i = 0; i < countAtFrameStart; i += 1) {
           const first = floatingMeowlMotion[i];
-          for (let j = i + 1; j < countAtFrameStart; j += 1) {
-            const second = floatingMeowlMotion[j];
-            const overlaps = Math.abs(first.x + first.width / 2 - second.x - second.width / 2)
-                < (first.width + second.width) / 2
-              && Math.abs(first.y + first.height / 2 - second.y - second.height / 2)
-                < (first.height + second.height) / 2;
-            if (!overlaps) continue;
+          const cellX = Math.floor((first.x + first.width / 2) / cellSize);
+          const cellY = Math.floor((first.y + first.height / 2) / cellSize);
+          for (let neighborX = cellX - 1; neighborX <= cellX + 1; neighborX += 1) {
+            for (let neighborY = cellY - 1; neighborY <= cellY + 1; neighborY += 1) {
+              const neighbors = grid.get(`${neighborX}:${neighborY}`) || [];
+              for (const j of neighbors) {
+                if (j <= i) continue;
+                const second = floatingMeowlMotion[j];
+                const overlaps = Math.abs(first.x + first.width / 2 - second.x - second.width / 2)
+                    < (first.width + second.width) / 2
+                  && Math.abs(first.y + first.height / 2 - second.y - second.height / 2)
+                    < (first.height + second.height) / 2;
+                if (!overlaps) continue;
 
-            const pairKey = `${i}:${j}`;
-            collisionsThisFrame.add(pairKey);
-            if (activeCollisionPairs.has(pairKey)) continue;
+                const pairKey = `${i}:${j}`;
+                collisionsThisFrame.add(pairKey);
+                if (activeCollisionPairs.has(pairKey)) continue;
 
-            const firstCenterX = first.x + first.width / 2;
-            const firstCenterY = first.y + first.height / 2;
-            const secondCenterX = second.x + second.width / 2;
-            const secondCenterY = second.y + second.height / 2;
-            const overlapX = (first.width + second.width) / 2 - Math.abs(secondCenterX - firstCenterX);
-            const overlapY = (first.height + second.height) / 2 - Math.abs(secondCenterY - firstCenterY);
-            if (overlapX <= overlapY) {
-              const direction = secondCenterX === firstCenterX
-                ? (Math.random() < 0.5 ? 1 : -1)
-                : Math.sign(secondCenterX - firstCenterX);
-              first.x -= direction * overlapX / 2;
-              second.x += direction * overlapX / 2;
-              first.vx = -direction * Math.abs(first.vx);
-              second.vx = direction * Math.abs(second.vx);
-            } else {
-              const direction = secondCenterY === firstCenterY
-                ? (Math.random() < 0.5 ? 1 : -1)
-                : Math.sign(secondCenterY - firstCenterY);
-              first.y -= direction * overlapY / 2;
-              second.y += direction * overlapY / 2;
-              first.vy = -direction * Math.abs(first.vy);
-              second.vy = direction * Math.abs(second.vy);
-            }
-            first.element.style.left = `${first.x}px`;
-            first.element.style.top = `${first.y}px`;
-            second.element.style.left = `${second.x}px`;
-            second.element.style.top = `${second.y}px`;
-
-            const centerX = (first.x + first.width / 2 + second.x + second.width / 2) / 2;
-            const centerY = (first.y + first.height / 2 + second.y + second.height / 2) / 2;
-            const parentSize = (first.width + second.width) / 2;
-            const firstCopyAngle = Math.random() * Math.PI * 2;
-            for (let copy = 0; copy < 5; copy += 1) {
-              const size = Math.max(24, Math.min(190, parentSize * (0.55 + Math.random() * 0.9)));
-              const angle = firstCopyAngle + copy * Math.PI * 2 / 5;
-              const speed = 3 + Math.random() * 3;
-              const burstRadius = parentSize * 0.75 + size * 0.75;
-              addFloatingMeowl({
-                x: centerX - size / 2 + Math.cos(angle) * burstRadius,
-                y: centerY - size * 850 / 770 / 2 + Math.sin(angle) * burstRadius,
-                size,
-                velocity: {
-                  vx: Math.cos(angle) * speed,
-                  vy: Math.sin(angle) * speed
+                const firstCenterX = first.x + first.width / 2;
+                const firstCenterY = first.y + first.height / 2;
+                const secondCenterX = second.x + second.width / 2;
+                const secondCenterY = second.y + second.height / 2;
+                const overlapX = (first.width + second.width) / 2 - Math.abs(secondCenterX - firstCenterX);
+                const overlapY = (first.height + second.height) / 2 - Math.abs(secondCenterY - firstCenterY);
+                if (overlapX <= overlapY) {
+                  const direction = secondCenterX === firstCenterX
+                    ? (Math.random() < 0.5 ? 1 : -1)
+                    : Math.sign(secondCenterX - firstCenterX);
+                  first.x -= direction * overlapX / 2;
+                  second.x += direction * overlapX / 2;
+                  first.vx = -direction * Math.abs(first.vx);
+                  second.vx = direction * Math.abs(second.vx);
+                } else {
+                  const direction = secondCenterY === firstCenterY
+                    ? (Math.random() < 0.5 ? 1 : -1)
+                    : Math.sign(secondCenterY - firstCenterY);
+                  first.y -= direction * overlapY / 2;
+                  second.y += direction * overlapY / 2;
+                  first.vy = -direction * Math.abs(first.vy);
+                  second.vy = direction * Math.abs(second.vy);
                 }
-              });
+                first.element.style.transform = `translate3d(${first.x}px, ${first.y}px, 0)`;
+                second.element.style.transform = `translate3d(${second.x}px, ${second.y}px, 0)`;
+
+                const centerX = (first.x + first.width / 2 + second.x + second.width / 2) / 2;
+                const centerY = (first.y + first.height / 2 + second.y + second.height / 2) / 2;
+                if (timestamp - lastCollisionBurstAt < 400) continue;
+                lastCollisionBurstAt = timestamp;
+                const parentSize = (first.width + second.width) / 2;
+                const firstCopyAngle = Math.random() * Math.PI * 2;
+                for (let copy = 0; copy < 5; copy += 1) {
+                  const size = Math.max(24, Math.min(190, parentSize * (0.55 + Math.random() * 0.9)));
+                  const angle = firstCopyAngle + copy * Math.PI * 2 / 5;
+                  const speed = 3 + Math.random() * 3;
+                  const burstRadius = parentSize * 0.75 + size * 0.75;
+                  addFloatingMeowl({
+                    x: centerX - size / 2 + Math.cos(angle) * burstRadius,
+                    y: centerY - size * 850 / 770 / 2 + Math.sin(angle) * burstRadius,
+                    size,
+                    velocity: {
+                      vx: Math.cos(angle) * speed,
+                      vy: Math.sin(angle) * speed
+                    }
+                  });
+                }
+              }
             }
           }
         }
