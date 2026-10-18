@@ -399,32 +399,6 @@
                 collisionsThisFrame.add(pairKey);
                 if (activeCollisionPairs.has(pairKey)) continue;
 
-                const firstCenterX = first.x + first.width / 2;
-                const firstCenterY = first.y + first.height / 2;
-                const secondCenterX = second.x + second.width / 2;
-                const secondCenterY = second.y + second.height / 2;
-                const overlapX = (first.width + second.width) / 2 - Math.abs(secondCenterX - firstCenterX);
-                const overlapY = (first.height + second.height) / 2 - Math.abs(secondCenterY - firstCenterY);
-                if (overlapX <= overlapY) {
-                  const direction = secondCenterX === firstCenterX
-                    ? (Math.random() < 0.5 ? 1 : -1)
-                    : Math.sign(secondCenterX - firstCenterX);
-                  first.x -= direction * overlapX / 2;
-                  second.x += direction * overlapX / 2;
-                  first.vx = -direction * Math.abs(first.vx);
-                  second.vx = direction * Math.abs(second.vx);
-                } else {
-                  const direction = secondCenterY === firstCenterY
-                    ? (Math.random() < 0.5 ? 1 : -1)
-                    : Math.sign(secondCenterY - firstCenterY);
-                  first.y -= direction * overlapY / 2;
-                  second.y += direction * overlapY / 2;
-                  first.vy = -direction * Math.abs(first.vy);
-                  second.vy = direction * Math.abs(second.vy);
-                }
-                first.element.style.transform = `translate3d(${first.x}px, ${first.y}px, 0)`;
-                second.element.style.transform = `translate3d(${second.x}px, ${second.y}px, 0)`;
-
                 const centerX = (first.x + first.width / 2 + second.x + second.width / 2) / 2;
                 const centerY = (first.y + first.height / 2 + second.y + second.height / 2) / 2;
                 if (timestamp - lastCollisionBurstAt < 400) continue;
