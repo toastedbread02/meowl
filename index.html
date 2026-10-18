@@ -99,7 +99,7 @@
     }
 
     #meowl-image.disco-mode {
-      animation: meowl-disco 1.2s linear infinite;
+      animation: meowl-disco 2s linear infinite;
     }
 
     #floating-meowls.disco-mode img {
@@ -183,7 +183,7 @@
       "we love meowls"
     ];
     const maxFloatingMeowls = 20;
-    const maxDiscoMeowls = 150;
+    const maxDiscoMeowls = 200;
     let imageResetTimeout;
     let textTimer;
     let countdownTimer;
@@ -194,6 +194,7 @@
     let adminAudioWasPlaying = false;
     let discoActive = false;
     let discoTimer;
+    let discoRainbowDelay = "0ms";
     let lastMessage = "free music wow";
     let floatingMeowlMotion = [];
     let activeCollisionPairs = new Set();
@@ -228,7 +229,9 @@
     function startDiscoEvent() {
       if (!canStartEvent()) return;
       discoActive = true;
+      discoRainbowDelay = `${-(performance.now() % 2000)}ms`;
       image.classList.add("disco-mode");
+      image.style.animationDelay = discoRainbowDelay;
       floatingMeowls.classList.add("disco-mode");
       banner.innerText = "meowl disco mode!";
       floatingMeowls.replaceChildren();
@@ -239,6 +242,7 @@
       animationFrameId = requestAnimationFrame(moveFloatingMeowls);
       discoTimer = setTimeout(() => {
         image.classList.remove("disco-mode");
+        image.style.removeProperty("animation-delay");
         floatingMeowls.classList.remove("disco-mode");
         discoActive = false;
         cancelAnimationFrame(animationFrameId);
@@ -317,6 +321,7 @@
       meowl.style.height = `${height}px`;
       meowl.style.left = `${x}px`;
       meowl.style.top = `${y}px`;
+      if (discoActive) meowl.style.animationDelay = `0ms, ${discoRainbowDelay}`;
       floatingMeowls.appendChild(meowl);
 
       floatingMeowlMotion.push({
@@ -374,10 +379,33 @@
             collisionsThisFrame.add(pairKey);
             if (activeCollisionPairs.has(pairKey)) continue;
 
-            first.vx *= -1;
-            first.vy *= -1;
-            second.vx *= -1;
-            second.vy *= -1;
+            const firstCenterX = first.x + first.width / 2;
+            const firstCenterY = first.y + first.height / 2;
+            const secondCenterX = second.x + second.width / 2;
+            const secondCenterY = second.y + second.height / 2;
+            const overlapX = (first.width + second.width) / 2 - Math.abs(secondCenterX - firstCenterX);
+            const overlapY = (first.height + second.height) / 2 - Math.abs(secondCenterY - firstCenterY);
+            if (overlapX <= overlapY) {
+              const direction = secondCenterX === firstCenterX
+                ? (Math.random() < 0.5 ? 1 : -1)
+                : Math.sign(secondCenterX - firstCenterX);
+              first.x -= direction * overlapX / 2;
+              second.x += direction * overlapX / 2;
+              first.vx = -direction * Math.abs(first.vx);
+              second.vx = direction * Math.abs(second.vx);
+            } else {
+              const direction = secondCenterY === firstCenterY
+                ? (Math.random() < 0.5 ? 1 : -1)
+                : Math.sign(secondCenterY - firstCenterY);
+              first.y -= direction * overlapY / 2;
+              second.y += direction * overlapY / 2;
+              first.vy = -direction * Math.abs(first.vy);
+              second.vy = direction * Math.abs(second.vy);
+            }
+            first.element.style.left = `${first.x}px`;
+            first.element.style.top = `${first.y}px`;
+            second.element.style.left = `${second.x}px`;
+            second.element.style.top = `${second.y}px`;
 
             const centerX = (first.x + first.width / 2 + second.x + second.width / 2) / 2;
             const centerY = (first.y + first.height / 2 + second.y + second.height / 2) / 2;
@@ -387,9 +415,10 @@
               const size = Math.max(24, Math.min(190, parentSize * (0.55 + Math.random() * 0.9)));
               const angle = firstCopyAngle + copy * Math.PI * 2 / 5;
               const speed = 3 + Math.random() * 3;
+              const burstRadius = parentSize * 0.75 + size * 0.75;
               addFloatingMeowl({
-                x: centerX - size / 2 + Math.cos(angle) * 18,
-                y: centerY - size * 850 / 770 / 2 + Math.sin(angle) * 18,
+                x: centerX - size / 2 + Math.cos(angle) * burstRadius,
+                y: centerY - size * 850 / 770 / 2 + Math.sin(angle) * burstRadius,
                 size,
                 velocity: {
                   vx: Math.cos(angle) * speed,
