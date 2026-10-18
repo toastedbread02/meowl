@@ -157,7 +157,7 @@
     <button type="button" data-event="admin-now">Start admin event now</button>
     <button type="button" data-event="meow">Play meow reaction</button>
     <button type="button" data-event="disco">Disco meowl (30 seconds)</button>
-    <p class="event-warning">Warning: Disco mode can make your browser lag as the images multiply.</p>
+    <p class="event-warning">Warning: Disco mode has no image limit and may make your browser lag or freeze.</p>
   </section>
   <script>
     const audio = document.getElementById("meowl-audio");
@@ -183,7 +183,6 @@
       "we love meowls"
     ];
     const maxFloatingMeowls = 20;
-    const maxDiscoMeowls = 200;
     let imageResetTimeout;
     let textTimer;
     let countdownTimer;
@@ -411,7 +410,7 @@
             const centerY = (first.y + first.height / 2 + second.y + second.height / 2) / 2;
             const parentSize = (first.width + second.width) / 2;
             const firstCopyAngle = Math.random() * Math.PI * 2;
-            for (let copy = 0; copy < 5 && floatingMeowlMotion.length < maxDiscoMeowls; copy += 1) {
+            for (let copy = 0; copy < 5; copy += 1) {
               const size = Math.max(24, Math.min(190, parentSize * (0.55 + Math.random() * 0.9)));
               const angle = firstCopyAngle + copy * Math.PI * 2 / 5;
               const speed = 3 + Math.random() * 3;
