@@ -36,69 +36,6 @@
       background: yellow;
     }
 
-    #admin-toggle {
-      position: fixed;
-      right: 12px;
-      bottom: 12px;
-      z-index: 8;
-      width: 34px;
-      height: 34px;
-      border: 1px solid rgba(255, 255, 255, 0.45);
-      border-radius: 50%;
-      color: white;
-      background: rgba(0, 0, 0, 0.45);
-      font-size: 18px;
-      cursor: pointer;
-      opacity: 0.35;
-    }
-
-    #admin-toggle:hover,
-    #admin-toggle:focus-visible {
-      opacity: 1;
-    }
-
-    #admin-panel {
-      position: fixed;
-      right: 12px;
-      bottom: 54px;
-      z-index: 8;
-      width: min(260px, calc(100vw - 24px));
-      box-sizing: border-box;
-      padding: 12px;
-      border: 1px solid #777;
-      border-radius: 10px;
-      color: white;
-      background: rgba(20, 20, 20, 0.95);
-      font: 14px sans-serif;
-    }
-
-    #admin-panel[hidden] {
-      display: none;
-    }
-
-    #admin-panel h2 {
-      margin: 0 0 10px;
-      font-size: 16px;
-    }
-
-    #admin-panel button[data-event] {
-      display: block;
-      width: 100%;
-      margin-top: 7px;
-      padding: 8px;
-      border: 0;
-      border-radius: 6px;
-      text-align: left;
-      cursor: pointer;
-    }
-
-    .event-warning {
-      margin: 10px 2px 0;
-      color: #ffd66b;
-      font-size: 12px;
-      line-height: 1.4;
-    }
-
     #meowl-image.disco-mode {
       animation: meowl-disco 2s linear infinite;
     }
@@ -120,13 +57,11 @@
       position: fixed;
       inset: 0;
       z-index: 3;
-      overflow: hidden;
-      pointer-events: none;
       display: block;
       width: 100%;
       height: 100%;
+      pointer-events: none;
     }
-
 
   </style>
 </head>
@@ -138,16 +73,6 @@
   <audio id="admin-audio" src="meowlwow.mp3" loop preload="auto"></audio>
   <audio id="disco-audio" src="disco.mp3" preload="auto"></audio>
   <canvas id="floating-meowls" aria-hidden="true"></canvas>
-  <button id="admin-toggle" type="button" aria-label="Open secret event panel" aria-expanded="false" title="">⚙</button>
-  <section id="admin-panel" aria-label="Secret event panel" hidden>
-    <h2>Meowl event panel</h2>
-    <button type="button" data-event="countdown">Start admin countdown</button>
-    <button type="button" data-event="admin-now">Start admin event now</button>
-    <button type="button" data-event="meow">Play meow reaction</button>
-    <button type="button" data-event="disco">Disco meowl (4 minutes 7 seconds)</button>
-    <button type="button" data-event="disco-countdown">Start disco countdown</button>
-    <p class="event-warning">Warning: Disco mode has no image limit and may slow down your browser.</p>
-  </section>
   <script>
     const audio = document.getElementById("meowl-audio");
     const image = document.getElementById("meowl-image");
@@ -159,8 +84,6 @@
     const floatingContext = floatingMeowls.getContext("2d", { alpha: true });
     const floatingSprite = new Image();
     floatingSprite.src = "meowl3.png";
-    const adminToggle = document.getElementById("admin-toggle");
-    const adminPanel = document.getElementById("admin-panel");
     const rotatingMessages = [
       "free music meowl",
       "free musics",
@@ -263,33 +186,10 @@
         activeCollisionPairs.clear();
         floatingContext.clearRect(0, 0, window.innerWidth, window.innerHeight);
         showRandomMessage();
-      }, 247000);
+        discoAudio.pause();
+        discoAudio.currentTime = 0;
+      }, 60000);
     }
-
-    adminToggle.addEventListener("click", () => {
-      adminPanel.hidden = !adminPanel.hidden;
-      adminToggle.setAttribute("aria-expanded", String(!adminPanel.hidden));
-    });
-
-    adminPanel.addEventListener("click", (event) => {
-      const eventButton = event.target.closest("[data-event]");
-      if (!eventButton) return;
-
-      if (eventButton.dataset.event === "meow") {
-        triggerMeowReaction();
-      } else if (eventButton.dataset.event === "disco") {
-        startDiscoEvent();
-      } else if (eventButton.dataset.event === "countdown" && canStartEvent()) {
-        beginAdminCountdown();
-      } else if (eventButton.dataset.event === "disco-countdown" && canStartEvent()) {
-        beginDiscoCountdown();
-      } else if (eventButton.dataset.event === "admin-now" && canStartEvent()) {
-        startAdminEvent();
-      }
-
-      adminPanel.hidden = true;
-      adminToggle.setAttribute("aria-expanded", "false");
-    });
 
     function showRandomMessage() {
       let message;
