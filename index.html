@@ -91,6 +91,13 @@
       cursor: pointer;
     }
 
+    .event-warning {
+      margin: 10px 2px 0;
+      color: #ffd66b;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
     #meowl-image.disco-mode {
       animation: meowl-disco 1.2s linear infinite;
     }
@@ -142,6 +149,7 @@
     <button type="button" data-event="admin-now">Start admin event now</button>
     <button type="button" data-event="meow">Play meow reaction</button>
     <button type="button" data-event="disco">Disco meowl (30 seconds)</button>
+    <p class="event-warning">Warning: Disco mode can make your browser lag as the images multiply.</p>
   </section>
   <script>
     const audio = document.getElementById("meowl-audio");
@@ -167,6 +175,7 @@
       "we love meowls"
     ];
     const maxFloatingMeowls = 20;
+    const maxDiscoMeowls = 150;
     let imageResetTimeout;
     let textTimer;
     let countdownTimer;
@@ -179,6 +188,7 @@
     let discoTimer;
     let lastMessage = "free music wow";
     let floatingMeowlMotion = [];
+    let activeCollisionPairs = new Set();
     let animationFrameId;
     let lastAnimationFrame = 0;
 
@@ -212,9 +222,19 @@
       discoActive = true;
       image.classList.add("disco-mode");
       banner.innerText = "meowl disco mode!";
+      floatingMeowls.replaceChildren();
+      floatingMeowlMotion = [];
+      activeCollisionPairs.clear();
+      for (let i = 0; i < 6; i += 1) addFloatingMeowl();
+      lastAnimationFrame = 0;
+      animationFrameId = requestAnimationFrame(moveFloatingMeowls);
       discoTimer = setTimeout(() => {
         image.classList.remove("disco-mode");
         discoActive = false;
+        cancelAnimationFrame(animationFrameId);
+        floatingMeowlMotion = [];
+        activeCollisionPairs.clear();
+        floatingMeowls.replaceChildren();
         showRandomMessage();
       }, 30000);
     }
@@ -272,13 +292,15 @@
       updateCountdown();
     }
 
-    function addFloatingMeowl() {
+    function addFloatingMeowl(options = {}) {
       const meowl = document.createElement("img");
-      const size = 55 + Math.random() * 95;
+      const size = options.size ?? 55 + Math.random() * 95;
       const width = Math.round(size);
       const height = Math.round(size * 850 / 770);
-      const x = Math.random() * Math.max(0, window.innerWidth - width);
-      const y = Math.random() * Math.max(0, window.innerHeight - height);
+      const maxX = Math.max(0, window.innerWidth - width);
+      const maxY = Math.max(0, window.innerHeight - height);
+      const x = Math.max(0, Math.min(options.x ?? Math.random() * maxX, maxX));
+      const y = Math.max(0, Math.min(options.y ?? Math.random() * maxY, maxY));
       meowl.src = "meowl3.png";
       meowl.alt = "";
       meowl.style.width = `${width}px`;
@@ -323,7 +345,49 @@
         meowl.element.style.top = `${meowl.y}px`;
       });
 
-      if (adminEventActive) animationFrameId = requestAnimationFrame(moveFloatingMeowls);
+      if (discoActive) {
+        const collisionsThisFrame = new Set();
+        const countAtFrameStart = floatingMeowlMotion.length;
+
+        for (let i = 0; i < countAtFrameStart; i += 1) {
+          const first = floatingMeowlMotion[i];
+          for (let j = i + 1; j < countAtFrameStart; j += 1) {
+            const second = floatingMeowlMotion[j];
+            const overlaps = Math.abs(first.x + first.width / 2 - second.x - second.width / 2)
+                < (first.width + second.width) / 2
+              && Math.abs(first.y + first.height / 2 - second.y - second.height / 2)
+                < (first.height + second.height) / 2;
+            if (!overlaps) continue;
+
+            const pairKey = `${i}:${j}`;
+            collisionsThisFrame.add(pairKey);
+            if (activeCollisionPairs.has(pairKey)) continue;
+
+            first.vx *= -1;
+            first.vy *= -1;
+            second.vx *= -1;
+            second.vy *= -1;
+
+            const centerX = (first.x + first.width / 2 + second.x + second.width / 2) / 2;
+            const centerY = (first.y + first.height / 2 + second.y + second.height / 2) / 2;
+            const parentSize = (first.width + second.width) / 2;
+            for (let copy = 0; copy < 5 && floatingMeowlMotion.length < maxDiscoMeowls; copy += 1) {
+              const size = Math.max(24, Math.min(190, parentSize * (0.55 + Math.random() * 0.9)));
+              addFloatingMeowl({
+                x: centerX - size / 2 + (Math.random() - 0.5) * parentSize,
+                y: centerY - size * 850 / 770 / 2 + (Math.random() - 0.5) * parentSize,
+                size
+              });
+            }
+          }
+        }
+
+        activeCollisionPairs = collisionsThisFrame;
+      }
+
+      if (adminEventActive || discoActive) {
+        animationFrameId = requestAnimationFrame(moveFloatingMeowls);
+      }
     }
 
     function startAdminEvent() {
