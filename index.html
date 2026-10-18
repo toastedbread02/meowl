@@ -290,7 +290,7 @@
       "we love meowls"
     ];
     const maxFloatingMeowls = 20;
-    const discoCopiesPerCollision = 30;
+    const discoCopiesPerCollision = 60;
     let imageResetTimeout;
     let textTimer;
     let countdownTimer;
@@ -832,7 +832,7 @@
 
                 const centerX = (first.x + first.width / 2 + second.x + second.width / 2) / 2;
                 const centerY = (first.y + first.height / 2 + second.y + second.height / 2) / 2;
-                if (timestamp - lastCollisionBurstAt < 1500) continue;
+                if (timestamp - lastCollisionBurstAt < 500) continue;
                 lastCollisionBurstAt = timestamp;
                 const parentSize = (first.width + second.width) / 2;
                 const firstCopyAngle = Math.random() * Math.PI * 2;
