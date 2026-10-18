@@ -20,16 +20,19 @@
       object-fit: cover;
     }
 
-    audio {
-      position: fixed;
-      right: 1rem;
-      bottom: 1rem;
-      z-index: 1;
-    }
   </style>
 </head>
 <body>
   <img src="meowl.png" alt="Meowl">
-  <audio src="meowl.mp3" autoplay loop controls></audio>
+  <audio id="meowl-audio" src="meowl.mp3" autoplay loop></audio>
+  <script>
+    const audio = document.getElementById("meowl-audio");
+
+    audio.play().catch(() => {
+      if (window.confirm("May this page play the looping sound?")) {
+        audio.play().catch(() => {});
+      }
+    });
+  </script>
 </body>
 </html>
