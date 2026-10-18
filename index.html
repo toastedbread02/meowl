@@ -122,27 +122,9 @@
       z-index: 3;
       overflow: hidden;
       pointer-events: none;
-    }
-
-    #floating-meowls img {
-      position: absolute;
-      left: 0;
-      top: 0;
       display: block;
-      height: auto;
-      object-fit: contain;
-      animation: meowl-pop 450ms ease-out both;
-    }
-
-    @keyframes meowl-pop {
-      from {
-        opacity: 0.2;
-        scale: 0.1;
-      }
-      100% {
-        opacity: 1;
-        scale: 1;
-      }
+      width: 100%;
+      height: 100%;
     }
 
 
@@ -155,7 +137,7 @@
   <audio id="meow-sound" src="meow.mp3" preload="auto"></audio>
   <audio id="admin-audio" src="meowlwow.mp3" loop preload="auto"></audio>
   <audio id="disco-audio" src="disco.mp3" preload="auto"></audio>
-  <div id="floating-meowls" aria-hidden="true"></div>
+  <canvas id="floating-meowls" aria-hidden="true"></canvas>
   <button id="admin-toggle" type="button" aria-label="Open secret event panel" aria-expanded="false" title="">⚙</button>
   <section id="admin-panel" aria-label="Secret event panel" hidden>
     <h2>Meowl event panel</h2>
@@ -164,7 +146,7 @@
     <button type="button" data-event="meow">Play meow reaction</button>
     <button type="button" data-event="disco">Disco meowl (4 minutes 7 seconds)</button>
     <button type="button" data-event="disco-countdown">Start disco countdown</button>
-    <p class="event-warning">Warning: Disco mode has no image limit. Collisions are paced to reduce lag, but many images may still slow your browser.</p>
+    <p class="event-warning">Warning: Disco mode has no image limit and may slow down your browser.</p>
   </section>
   <script>
     const audio = document.getElementById("meowl-audio");
@@ -174,6 +156,9 @@
     const discoAudio = document.getElementById("disco-audio");
     const banner = document.getElementById("status-banner");
     const floatingMeowls = document.getElementById("floating-meowls");
+    const floatingContext = floatingMeowls.getContext("2d", { alpha: true });
+    const floatingSprite = new Image();
+    floatingSprite.src = "meowl3.png";
     const adminToggle = document.getElementById("admin-toggle");
     const adminPanel = document.getElementById("admin-panel");
     const rotatingMessages = [
@@ -209,8 +194,19 @@
     let floatingMeowlMotion = [];
     let activeCollisionPairs = new Set();
     let lastCollisionBurstAt = -Infinity;
+    let lastCollisionCheckAt = -Infinity;
     let animationFrameId;
     let lastAnimationFrame = 0;
+
+    function resizeFloatingCanvas() {
+      const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+      floatingMeowls.width = Math.round(window.innerWidth * ratio);
+      floatingMeowls.height = Math.round(window.innerHeight * ratio);
+      floatingContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+    }
+
+    resizeFloatingCanvas();
+    window.addEventListener("resize", resizeFloatingCanvas);
 
     image.addEventListener("click", () => {
       if (adminEventActive) return;
@@ -248,10 +244,11 @@
       floatingMeowls.classList.add("disco-mode");
       floatingMeowls.style.animationDelay = discoRainbowDelay;
       banner.innerText = "meowl disco mode!";
-      floatingMeowls.replaceChildren();
+      floatingContext.clearRect(0, 0, window.innerWidth, window.innerHeight);
       floatingMeowlMotion = [];
       activeCollisionPairs.clear();
       lastCollisionBurstAt = -Infinity;
+      lastCollisionCheckAt = -Infinity;
       for (let i = 0; i < 2; i += 1) addFloatingMeowl();
       lastAnimationFrame = 0;
       animationFrameId = requestAnimationFrame(moveFloatingMeowls);
@@ -264,7 +261,7 @@
         cancelAnimationFrame(animationFrameId);
         floatingMeowlMotion = [];
         activeCollisionPairs.clear();
-        floatingMeowls.replaceChildren();
+        floatingContext.clearRect(0, 0, window.innerWidth, window.innerHeight);
         showRandomMessage();
       }, 247000);
     }
@@ -346,7 +343,6 @@
     }
 
     function addFloatingMeowl(options = {}) {
-      const meowl = document.createElement("img");
       const size = options.size ?? 55 + Math.random() * 95;
       const width = Math.round(size);
       const height = Math.round(size * 850 / 770);
@@ -354,15 +350,7 @@
       const maxY = Math.max(0, window.innerHeight - height);
       const x = Math.max(0, Math.min(options.x ?? Math.random() * maxX, maxX));
       const y = Math.max(0, Math.min(options.y ?? Math.random() * maxY, maxY));
-      meowl.src = "meowl3.png";
-      meowl.alt = "";
-      meowl.style.width = `${width}px`;
-      meowl.style.height = `${height}px`;
-      meowl.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-      floatingMeowls.appendChild(meowl);
-
       floatingMeowlMotion.push({
-        element: meowl,
         x,
         y,
         width,
@@ -374,12 +362,19 @@
     }
 
     function moveFloatingMeowls(timestamp) {
+      const motionCount = floatingMeowlMotion.length;
+      const frameInterval = motionCount > 5000 ? 1000 / 15 : motionCount > 1000 ? 1000 / 30 : 0;
+      if (frameInterval && timestamp - lastAnimationFrame < frameInterval) {
+        animationFrameId = requestAnimationFrame(moveFloatingMeowls);
+        return;
+      }
       const frameScale = lastAnimationFrame
-        ? Math.min((timestamp - lastAnimationFrame) / 16.67, 3)
+        ? Math.min((timestamp - lastAnimationFrame) / 16.67, 5)
         : 1;
       lastAnimationFrame = timestamp;
 
-      floatingMeowlMotion.forEach((meowl) => {
+      for (let i = 0; i < motionCount; i += 1) {
+        const meowl = floatingMeowlMotion[i];
         const maxX = Math.max(0, window.innerWidth - meowl.width);
         const maxY = Math.max(0, window.innerHeight - meowl.height);
         meowl.x += meowl.vx * frameScale;
@@ -394,10 +389,17 @@
           meowl.vy *= -1;
         }
 
-        meowl.element.style.transform = `translate3d(${meowl.x}px, ${meowl.y}px, 0)`;
-      });
+      }
 
-      if (discoActive) {
+      floatingContext.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      if (floatingSprite.complete && floatingSprite.naturalWidth) {
+        for (const meowl of floatingMeowlMotion) {
+          floatingContext.drawImage(floatingSprite, meowl.x, meowl.y, meowl.width, meowl.height);
+        }
+      }
+
+      if (discoActive && timestamp - lastCollisionCheckAt >= 100) {
+        lastCollisionCheckAt = timestamp;
         const collisionsThisFrame = new Set();
         const countAtFrameStart = floatingMeowlMotion.length;
         const cellSize = 256;
@@ -495,7 +497,7 @@
       clearInterval(spawnTimer);
       cancelAnimationFrame(animationFrameId);
       floatingMeowlMotion = [];
-      floatingMeowls.replaceChildren();
+      floatingContext.clearRect(0, 0, window.innerWidth, window.innerHeight);
       adminAudio.pause();
       adminAudio.currentTime = 0;
       adminEventActive = false;
