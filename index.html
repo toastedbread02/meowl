@@ -159,7 +159,7 @@
     <button type="button" data-event="countdown">Start admin countdown</button>
     <button type="button" data-event="admin-now">Start admin event now</button>
     <button type="button" data-event="meow">Play meow reaction</button>
-    <button type="button" data-event="disco">Disco meowl (30 seconds)</button>
+    <button type="button" data-event="disco">Disco meowl (1 minute)</button>
     <p class="event-warning">Warning: Disco mode has no image limit. Collisions are paced to reduce lag, but many images may still slow your browser.</p>
   </section>
   <script>
@@ -256,7 +256,7 @@
         activeCollisionPairs.clear();
         floatingMeowls.replaceChildren();
         showRandomMessage();
-      }, 30000);
+      }, 60000);
     }
 
     adminToggle.addEventListener("click", () => {
