@@ -23,15 +23,12 @@
   </style>
 </head>
 <body>
-  <img src="meowl.png" alt="Meowl">
-  <audio id="meowl-audio" src="meowl.mp3" autoplay loop></audio>
+  <img id="meowl-image" src="meowl.png" alt="Meowl">
+  <audio id="meowl-audio" src="meowl.mp3" loop></audio>
   <script>
     const audio = document.getElementById("meowl-audio");
-
-    audio.play().catch(() => {
-      if (window.confirm("May this page play the looping sound?")) {
-        audio.play().catch(() => {});
-      }
+    document.getElementById("meowl-image").addEventListener("click", () => {
+      audio.play();
     });
   </script>
 </body>
