@@ -35,6 +35,70 @@
       background: yellow;
     }
 
+    #admin-toggle {
+      position: fixed;
+      right: 12px;
+      bottom: 12px;
+      z-index: 8;
+      width: 34px;
+      height: 34px;
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      border-radius: 50%;
+      color: white;
+      background: rgba(0, 0, 0, 0.45);
+      font-size: 18px;
+      cursor: pointer;
+      opacity: 0.35;
+    }
+
+    #admin-toggle:hover,
+    #admin-toggle:focus-visible {
+      opacity: 1;
+    }
+
+    #admin-panel {
+      position: fixed;
+      right: 12px;
+      bottom: 54px;
+      z-index: 8;
+      width: min(260px, calc(100vw - 24px));
+      box-sizing: border-box;
+      padding: 12px;
+      border: 1px solid #777;
+      border-radius: 10px;
+      color: white;
+      background: rgba(20, 20, 20, 0.95);
+      font: 14px sans-serif;
+    }
+
+    #admin-panel[hidden] {
+      display: none;
+    }
+
+    #admin-panel h2 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    #admin-panel button[data-event] {
+      display: block;
+      width: 100%;
+      margin-top: 7px;
+      padding: 8px;
+      border: 0;
+      border-radius: 6px;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    #meowl-image.disco-mode {
+      animation: meowl-disco 1.2s linear infinite;
+    }
+
+    @keyframes meowl-disco {
+      to { filter: hue-rotate(360deg); }
+    }
+
     #floating-meowls {
       position: fixed;
       inset: 0;
@@ -71,6 +135,14 @@
   <audio id="meow-sound" src="meow.mp3" preload="auto"></audio>
   <audio id="admin-audio" src="meowlwow.mp3" loop preload="auto"></audio>
   <div id="floating-meowls" aria-hidden="true"></div>
+  <button id="admin-toggle" type="button" aria-label="Open secret event panel" aria-expanded="false" title="">⚙</button>
+  <section id="admin-panel" aria-label="Secret event panel" hidden>
+    <h2>Meowl event panel</h2>
+    <button type="button" data-event="countdown">Start admin countdown</button>
+    <button type="button" data-event="admin-now">Start admin event now</button>
+    <button type="button" data-event="meow">Play meow reaction</button>
+    <button type="button" data-event="disco">Disco meowl (30 seconds)</button>
+  </section>
   <script>
     const audio = document.getElementById("meowl-audio");
     const image = document.getElementById("meowl-image");
@@ -78,6 +150,8 @@
     const adminAudio = document.getElementById("admin-audio");
     const banner = document.getElementById("status-banner");
     const floatingMeowls = document.getElementById("floating-meowls");
+    const adminToggle = document.getElementById("admin-toggle");
+    const adminPanel = document.getElementById("admin-panel");
     const rotatingMessages = [
       "free music meowl",
       "free musics",
@@ -101,11 +175,12 @@
     let countdownActive = false;
     let adminEventActive = false;
     let adminAudioWasPlaying = false;
+    let discoActive = false;
+    let discoTimer;
     let lastMessage = "free music wow";
     let floatingMeowlMotion = [];
     let animationFrameId;
     let lastAnimationFrame = 0;
-    let secretClickCount = 0;
 
     image.addEventListener("click", () => {
       if (adminEventActive) return;
@@ -115,6 +190,10 @@
         return;
       }
 
+      triggerMeowReaction();
+    });
+
+    function triggerMeowReaction() {
       image.src = "meowl2.png";
       meowSound.currentTime = 0;
       meowSound.play();
@@ -122,16 +201,45 @@
       imageResetTimeout = setTimeout(() => {
         image.src = "meowl.png";
       }, 300);
+    }
+
+    function canStartEvent() {
+      return !countdownActive && !adminEventActive && !discoActive;
+    }
+
+    function startDiscoEvent() {
+      if (!canStartEvent()) return;
+      discoActive = true;
+      image.classList.add("disco-mode");
+      banner.innerText = "meowl disco mode!";
+      discoTimer = setTimeout(() => {
+        image.classList.remove("disco-mode");
+        discoActive = false;
+        showRandomMessage();
+      }, 30000);
+    }
+
+    adminToggle.addEventListener("click", () => {
+      adminPanel.hidden = !adminPanel.hidden;
+      adminToggle.setAttribute("aria-expanded", String(!adminPanel.hidden));
     });
 
-    banner.addEventListener("click", () => {
-      if (countdownActive || adminEventActive) return;
+    adminPanel.addEventListener("click", (event) => {
+      const eventButton = event.target.closest("[data-event]");
+      if (!eventButton) return;
 
-      secretClickCount += 1;
-      if (secretClickCount >= 5) {
-        secretClickCount = 0;
+      if (eventButton.dataset.event === "meow") {
+        triggerMeowReaction();
+      } else if (eventButton.dataset.event === "disco") {
+        startDiscoEvent();
+      } else if (eventButton.dataset.event === "countdown" && canStartEvent()) {
         beginAdminCountdown();
+      } else if (eventButton.dataset.event === "admin-now" && canStartEvent()) {
+        startAdminEvent();
       }
+
+      adminPanel.hidden = true;
+      adminToggle.setAttribute("aria-expanded", "false");
     });
 
     function showRandomMessage() {
@@ -256,7 +364,7 @@
     }
 
     textTimer = setInterval(() => {
-      if (countdownActive || adminEventActive) return;
+      if (countdownActive || adminEventActive || discoActive) return;
       showRandomMessage();
       if (Math.random() < 0.01) beginAdminCountdown();
     }, 5000);
