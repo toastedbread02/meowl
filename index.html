@@ -13,26 +13,107 @@
       overflow: hidden;
     }
 
-    img {
+    #meowl-image {
       display: block;
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
 
+    #status-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 5;
+      box-sizing: border-box;
+      width: 100%;
+      font-size: 24px;
+      color: red;
+      font-weight: bold;
+      padding: 20px;
+      text-align: center;
+      background: yellow;
+    }
+
+    #floating-meowls {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    #floating-meowls img {
+      position: absolute;
+      display: block;
+      height: auto;
+      object-fit: contain;
+      animation: meowl-burst-float 5s ease-in-out infinite alternate;
+      will-change: transform;
+    }
+
+    @keyframes meowl-burst-float {
+      0% {
+        opacity: 0.2;
+        transform: translate(0, 0) scale(0.1) rotate(0deg);
+      }
+      20% {
+        opacity: 1;
+        transform: translate(var(--dx1), var(--dy1)) scale(1.15) rotate(var(--rot1));
+      }
+      60% {
+        transform: translate(var(--dx2), var(--dy2)) scale(0.9) rotate(var(--rot2));
+      }
+      100% {
+        opacity: 1;
+        transform: translate(var(--dx3), var(--dy3)) scale(1) rotate(var(--rot3));
+      }
+    }
+
   </style>
 </head>
 <body>
+  <div id="status-banner">free music wow</div>
   <img id="meowl-image" src="meowl.png" alt="Meowl">
   <audio id="meowl-audio" src="meowl.mp3" loop></audio>
   <audio id="meow-sound" src="meow.mp3" preload="auto"></audio>
+  <audio id="admin-audio" src="meowlwow.mp3" loop preload="auto"></audio>
+  <div id="floating-meowls" aria-hidden="true"></div>
   <script>
     const audio = document.getElementById("meowl-audio");
     const image = document.getElementById("meowl-image");
     const meowSound = document.getElementById("meow-sound");
+    const adminAudio = document.getElementById("admin-audio");
+    const banner = document.getElementById("status-banner");
+    const floatingMeowls = document.getElementById("floating-meowls");
+    const rotatingMessages = [
+      "free music meowl",
+      "free musics",
+      "free meowl music",
+      "＼(＾▽＾)／",
+      "yay",
+      "lala",
+      "lLALALALLALALAL",
+      "lalalalalalll",
+      "allalalallalal",
+      "music by meowl made with love by meowl",
+      "we love meowls yay",
+      "we love meowls"
+    ];
+    const maxFloatingMeowls = 20;
     let imageResetTimeout;
+    let textTimer;
+    let countdownTimer;
+    let effectTimer;
+    let spawnTimer;
+    let countdownActive = false;
+    let adminEventActive = false;
+    let adminAudioWasPlaying = false;
+    let lastMessage = "free music wow";
 
     image.addEventListener("click", () => {
+      if (adminEventActive) return;
+
       if (audio.paused) {
         audio.play();
         return;
@@ -46,6 +127,95 @@
         image.src = "meowl.png";
       }, 300);
     });
+
+    function showRandomMessage() {
+      let message;
+      do {
+        message = rotatingMessages[Math.floor(Math.random() * rotatingMessages.length)];
+      } while (message === lastMessage);
+
+      lastMessage = message;
+      banner.innerText = message;
+    }
+
+    function beginAdminCountdown() {
+      countdownActive = true;
+      const countdownEndsAt = Date.now() + 60000;
+
+      function updateCountdown() {
+        const secondsLeft = Math.ceil((countdownEndsAt - Date.now()) / 1000);
+        if (secondsLeft <= 0) {
+          startAdminEvent();
+          return;
+        }
+
+        banner.innerText = secondsLeft === 60
+          ? "meowl admin abuse in 1 minute"
+          : `meowl admin abuse in ${secondsLeft} seconds`;
+        countdownTimer = setTimeout(updateCountdown, 1000);
+      }
+
+      updateCountdown();
+    }
+
+    function addFloatingMeowl() {
+      const meowl = document.createElement("img");
+      const size = 55 + Math.random() * 95;
+      meowl.src = "meowl3.png";
+      meowl.alt = "";
+      meowl.style.width = `${size}px`;
+      meowl.style.left = `${Math.random() * 100}%`;
+      meowl.style.top = `${Math.random() * 100}%`;
+      meowl.style.setProperty("--dx1", `${Math.random() * 180 - 90}px`);
+      meowl.style.setProperty("--dy1", `${Math.random() * 180 - 90}px`);
+      meowl.style.setProperty("--dx2", `${Math.random() * 320 - 160}px`);
+      meowl.style.setProperty("--dy2", `${Math.random() * 320 - 160}px`);
+      meowl.style.setProperty("--dx3", `${Math.random() * 440 - 220}px`);
+      meowl.style.setProperty("--dy3", `${Math.random() * 440 - 220}px`);
+      meowl.style.setProperty("--rot1", `${Math.random() * 180 - 90}deg`);
+      meowl.style.setProperty("--rot2", `${Math.random() * 360 - 180}deg`);
+      meowl.style.setProperty("--rot3", `${Math.random() * 540 - 270}deg`);
+      floatingMeowls.appendChild(meowl);
+    }
+
+    function startAdminEvent() {
+      countdownActive = false;
+      adminEventActive = true;
+      adminAudioWasPlaying = !audio.paused;
+      audio.pause();
+      adminAudio.currentTime = 0;
+      adminAudio.play();
+      banner.innerText = "meowl admin abuse!";
+
+      let floatingCount = 0;
+      function burst() {
+        for (let i = 0; i < 4 && floatingCount < maxFloatingMeowls; i += 1) {
+          addFloatingMeowl();
+          floatingCount += 1;
+        }
+        if (floatingCount >= maxFloatingMeowls) clearInterval(spawnTimer);
+      }
+
+      burst();
+      spawnTimer = setInterval(burst, 700);
+      effectTimer = setTimeout(endAdminEvent, 120000);
+    }
+
+    function endAdminEvent() {
+      clearInterval(spawnTimer);
+      floatingMeowls.replaceChildren();
+      adminAudio.pause();
+      adminAudio.currentTime = 0;
+      adminEventActive = false;
+      showRandomMessage();
+      if (adminAudioWasPlaying) audio.play();
+    }
+
+    textTimer = setInterval(() => {
+      if (countdownActive || adminEventActive) return;
+      showRandomMessage();
+      if (Math.random() < 0.05) beginAdminCountdown();
+    }, 5000);
   </script>
 </body>
 </html>
