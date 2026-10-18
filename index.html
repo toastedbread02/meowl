@@ -102,7 +102,15 @@
       animation: meowl-disco 1.2s linear infinite;
     }
 
+    #floating-meowls.disco-mode img {
+      animation: meowl-pop 450ms ease-out both, meowl-rainbow 2s linear infinite;
+    }
+
     @keyframes meowl-disco {
+      to { filter: hue-rotate(360deg); }
+    }
+
+    @keyframes meowl-rainbow {
       to { filter: hue-rotate(360deg); }
     }
 
@@ -221,15 +229,17 @@
       if (!canStartEvent()) return;
       discoActive = true;
       image.classList.add("disco-mode");
+      floatingMeowls.classList.add("disco-mode");
       banner.innerText = "meowl disco mode!";
       floatingMeowls.replaceChildren();
       floatingMeowlMotion = [];
       activeCollisionPairs.clear();
-      for (let i = 0; i < 6; i += 1) addFloatingMeowl();
+      for (let i = 0; i < 2; i += 1) addFloatingMeowl();
       lastAnimationFrame = 0;
       animationFrameId = requestAnimationFrame(moveFloatingMeowls);
       discoTimer = setTimeout(() => {
         image.classList.remove("disco-mode");
+        floatingMeowls.classList.remove("disco-mode");
         discoActive = false;
         cancelAnimationFrame(animationFrameId);
         floatingMeowlMotion = [];
@@ -316,7 +326,8 @@
         width,
         height,
         vx: (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 3),
-        vy: (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 3)
+        vy: (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 3),
+        ...(options.velocity || {})
       });
     }
 
@@ -371,12 +382,19 @@
             const centerX = (first.x + first.width / 2 + second.x + second.width / 2) / 2;
             const centerY = (first.y + first.height / 2 + second.y + second.height / 2) / 2;
             const parentSize = (first.width + second.width) / 2;
+            const firstCopyAngle = Math.random() * Math.PI * 2;
             for (let copy = 0; copy < 5 && floatingMeowlMotion.length < maxDiscoMeowls; copy += 1) {
               const size = Math.max(24, Math.min(190, parentSize * (0.55 + Math.random() * 0.9)));
+              const angle = firstCopyAngle + copy * Math.PI * 2 / 5;
+              const speed = 3 + Math.random() * 3;
               addFloatingMeowl({
-                x: centerX - size / 2 + (Math.random() - 0.5) * parentSize,
-                y: centerY - size * 850 / 770 / 2 + (Math.random() - 0.5) * parentSize,
-                size
+                x: centerX - size / 2 + Math.cos(angle) * 18,
+                y: centerY - size * 850 / 770 / 2 + Math.sin(angle) * 18,
+                size,
+                velocity: {
+                  vx: Math.cos(angle) * speed,
+                  vy: Math.sin(angle) * speed
+                }
               });
             }
           }
