@@ -144,6 +144,88 @@
       }
     }
 
+    #platformer {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      overflow: hidden;
+      color: white;
+      background: #17254a;
+      font-family: system-ui, sans-serif;
+    }
+
+    #platformer[hidden] {
+      display: none;
+    }
+
+    #platformer-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
+
+    .platformer-title,
+    #platformer-close {
+      position: absolute;
+      top: 14px;
+      z-index: 1;
+      padding: 10px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      background: rgba(12, 20, 45, 0.75);
+      backdrop-filter: blur(6px);
+    }
+
+    .platformer-title {
+      left: 14px;
+      pointer-events: none;
+    }
+
+    .platformer-title strong,
+    .platformer-title span {
+      display: block;
+    }
+
+    .platformer-title span {
+      margin-top: 4px;
+      color: #d7e6ff;
+      font-size: 13px;
+    }
+
+    #platformer-close {
+      right: 14px;
+      color: white;
+      cursor: pointer;
+    }
+
+    .platformer-touch-controls {
+      position: absolute;
+      right: 18px;
+      bottom: 18px;
+      left: 18px;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .platformer-touch-controls button {
+      min-width: 62px;
+      min-height: 56px;
+      margin: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 14px;
+      color: white;
+      background: rgba(12, 20, 45, 0.7);
+      font-size: 22px;
+      touch-action: none;
+      pointer-events: auto;
+    }
+
+    .platformer-touch-group {
+      display: flex;
+    }
+
   </style>
 </head>
 <body>
@@ -160,7 +242,23 @@
     <button type="button" data-event="admin-now">Start admin event now</button>
     <button type="button" data-event="meow">Play meow reaction</button>
     <button type="button" data-event="disco">Disco meowl (1 minute)</button>
+    <button type="button" data-event="platformer">Play Meowl platformer</button>
     <p class="event-warning">Warning: Disco mode has no image limit. Collisions are paced to reduce lag, but many images may still slow your browser.</p>
+  </section>
+  <section id="platformer" aria-label="Meowl platformer" hidden>
+    <canvas id="platformer-canvas"></canvas>
+    <div class="platformer-title">
+      <strong>Meowl Run</strong>
+      <span>Move: ← → or A/D · Jump: Space / ↑</span>
+    </div>
+    <button id="platformer-close" type="button">Close ×</button>
+    <div class="platformer-touch-controls" aria-label="Touch controls">
+      <div class="platformer-touch-group">
+        <button type="button" data-game-key="left" aria-label="Move left">◀</button>
+        <button type="button" data-game-key="right" aria-label="Move right">▶</button>
+      </div>
+      <button type="button" data-game-key="jump" aria-label="Jump">Jump</button>
+    </div>
   </section>
   <script>
     const audio = document.getElementById("meowl-audio");
@@ -171,6 +269,12 @@
     const floatingMeowls = document.getElementById("floating-meowls");
     const adminToggle = document.getElementById("admin-toggle");
     const adminPanel = document.getElementById("admin-panel");
+    const platformer = document.getElementById("platformer");
+    const platformerCanvas = document.getElementById("platformer-canvas");
+    const platformerContext = platformerCanvas.getContext("2d");
+    const platformerSprite = new Image();
+    platformerSprite.src = "meowl.png";
+    const gameKeys = new Set();
     const rotatingMessages = [
       "free music meowl",
       "free musics",
@@ -204,6 +308,25 @@
     let lastCollisionBurstAt = -Infinity;
     let animationFrameId;
     let lastAnimationFrame = 0;
+    let platformerActive = false;
+    let platformerFrameId;
+    let platformerLastFrame = 0;
+    let platformerWidth = 0;
+    let platformerHeight = 0;
+    let platformerWorldWidth = 0;
+    let platformerCameraX = 0;
+    let platformerPlatforms = [];
+    let platformerWon = false;
+    let jumpQueued = false;
+    const platformerPlayer = {
+      x: 0,
+      y: 0,
+      width: 42,
+      height: 46,
+      velocityY: 0,
+      onGround: false,
+      checkpointX: 24
+    };
 
     image.addEventListener("click", () => {
       if (adminEventActive) return;
@@ -277,10 +400,55 @@
         beginAdminCountdown();
       } else if (eventButton.dataset.event === "admin-now" && canStartEvent()) {
         startAdminEvent();
+      } else if (eventButton.dataset.event === "platformer") {
+        startPlatformer();
       }
 
       adminPanel.hidden = true;
       adminToggle.setAttribute("aria-expanded", "false");
+    });
+
+    document.getElementById("platformer-close").addEventListener("click", stopPlatformer);
+    platformerCanvas.addEventListener("click", () => {
+      if (platformerWon) resetPlatformerPlayer();
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (!platformerActive) return;
+      const key = event.key.toLowerCase();
+      if (["arrowleft", "arrowright", "arrowup", " "].includes(key)) event.preventDefault();
+      if (key === "arrowleft" || key === "a") gameKeys.add("left");
+      if (key === "arrowright" || key === "d") gameKeys.add("right");
+      if (key === "arrowup" || key === "w" || key === " ") jumpQueued = true;
+    });
+
+    window.addEventListener("keyup", (event) => {
+      const key = event.key.toLowerCase();
+      if (key === "arrowleft" || key === "a") gameKeys.delete("left");
+      if (key === "arrowright" || key === "d") gameKeys.delete("right");
+    });
+
+    window.addEventListener("blur", () => gameKeys.clear());
+
+    document.querySelectorAll("[data-game-key]").forEach((button) => {
+      const key = button.dataset.gameKey;
+      button.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        button.setPointerCapture(event.pointerId);
+        if (key === "jump") jumpQueued = true;
+        else gameKeys.add(key);
+      });
+      const release = () => gameKeys.delete(key);
+      button.addEventListener("pointerup", release);
+      button.addEventListener("pointercancel", release);
+      button.addEventListener("lostpointercapture", release);
+    });
+
+    window.addEventListener("resize", () => {
+      if (!platformerActive) return;
+      sizePlatformerCanvas();
+      buildPlatformerLevel();
+      resetPlatformerPlayer();
     });
 
     function showRandomMessage() {
@@ -291,6 +459,208 @@
 
       lastMessage = message;
       banner.innerText = message;
+    }
+
+    function sizePlatformerCanvas() {
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      platformerWidth = window.innerWidth;
+      platformerHeight = window.innerHeight;
+      platformerCanvas.width = Math.round(platformerWidth * pixelRatio);
+      platformerCanvas.height = Math.round(platformerHeight * pixelRatio);
+      platformerContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    }
+
+    function buildPlatformerLevel() {
+      const groundY = platformerHeight - 38;
+      platformerWorldWidth = Math.max(2400, platformerWidth * 3);
+      platformerPlatforms = [];
+
+      for (let x = 0; x < platformerWorldWidth; x += 600) {
+        platformerPlatforms.push({
+          x,
+          y: groundY,
+          width: Math.min(500, platformerWorldWidth - x),
+          height: 60,
+          ground: true
+        });
+      }
+
+      const platformHeights = [95, 155, 110, 175, 125, 165];
+      let index = 0;
+      for (let x = 160; x < platformerWorldWidth - 160; x += 180) {
+        platformerPlatforms.push({
+          x,
+          y: groundY - platformHeights[index % platformHeights.length],
+          width: 112,
+          height: 16,
+          ground: false
+        });
+        index += 1;
+      }
+    }
+
+    function resetPlatformerPlayer() {
+      platformerPlayer.x = 24;
+      platformerPlayer.y = platformerHeight - 38 - platformerPlayer.height;
+      platformerPlayer.velocityY = 0;
+      platformerPlayer.onGround = true;
+      platformerPlayer.checkpointX = 24;
+      platformerCameraX = 0;
+      platformerWon = false;
+      gameKeys.clear();
+      jumpQueued = false;
+    }
+
+    function startPlatformer() {
+      if (!canStartEvent()) return;
+      adminPanel.hidden = true;
+      adminToggle.setAttribute("aria-expanded", "false");
+      platformer.hidden = false;
+      platformerActive = true;
+      sizePlatformerCanvas();
+      buildPlatformerLevel();
+      resetPlatformerPlayer();
+      platformerLastFrame = 0;
+      platformerFrameId = requestAnimationFrame(updatePlatformer);
+    }
+
+    function stopPlatformer() {
+      platformerActive = false;
+      platformer.hidden = true;
+      gameKeys.clear();
+      cancelAnimationFrame(platformerFrameId);
+    }
+
+    function updatePlatformer(timestamp) {
+      if (!platformerActive) return;
+      const frameScale = platformerLastFrame
+        ? Math.min((timestamp - platformerLastFrame) / 16.67, 2)
+        : 1;
+      platformerLastFrame = timestamp;
+
+      if (!platformerWon) {
+        const direction = Number(gameKeys.has("right")) - Number(gameKeys.has("left"));
+        platformerPlayer.x += direction * 4.6 * frameScale;
+        platformerPlayer.x = Math.max(0, Math.min(
+          platformerPlayer.x,
+          platformerWorldWidth - platformerPlayer.width
+        ));
+
+        if (jumpQueued && platformerPlayer.onGround) {
+          platformerPlayer.velocityY = -12;
+          platformerPlayer.onGround = false;
+        }
+        jumpQueued = false;
+
+        const previousBottom = platformerPlayer.y + platformerPlayer.height;
+        platformerPlayer.velocityY += 0.58 * frameScale;
+        platformerPlayer.y += platformerPlayer.velocityY * frameScale;
+        platformerPlayer.onGround = false;
+
+        for (const ledge of platformerPlatforms) {
+          const horizontallyOverlaps = platformerPlayer.x + platformerPlayer.width > ledge.x
+            && platformerPlayer.x < ledge.x + ledge.width;
+          const currentBottom = platformerPlayer.y + platformerPlayer.height;
+          if (horizontallyOverlaps && platformerPlayer.velocityY >= 0
+              && previousBottom <= ledge.y && currentBottom >= ledge.y) {
+            platformerPlayer.y = ledge.y - platformerPlayer.height;
+            platformerPlayer.velocityY = 0;
+            platformerPlayer.onGround = true;
+            if (ledge.ground) platformerPlayer.checkpointX = platformerPlayer.x;
+          }
+        }
+
+        if (platformerPlayer.y > platformerHeight + 100) {
+          platformerPlayer.x = Math.max(24, platformerPlayer.checkpointX - 12);
+          platformerPlayer.y = platformerHeight - 38 - platformerPlayer.height;
+          platformerPlayer.velocityY = 0;
+          platformerPlayer.onGround = true;
+        }
+
+        if (platformerPlayer.x + platformerPlayer.width >= platformerWorldWidth - 72) {
+          platformerWon = true;
+          gameKeys.clear();
+        }
+      }
+
+      drawPlatformer();
+      platformerFrameId = requestAnimationFrame(updatePlatformer);
+    }
+
+    function drawPlatformer() {
+      const ctx = platformerContext;
+      const width = platformerWidth;
+      const height = platformerHeight;
+      const groundY = height - 38;
+      platformerCameraX = Math.max(0, Math.min(
+        platformerPlayer.x - width * 0.32,
+        platformerWorldWidth - width
+      ));
+
+      const sky = ctx.createLinearGradient(0, 0, 0, height);
+      sky.addColorStop(0, "#476dc1");
+      sky.addColorStop(1, "#b9e7ff");
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+      for (let i = 0; i < 9; i += 1) {
+        const cloudX = ((i * 287 - platformerCameraX * 0.28) % (width + 180) + width + 180) % (width + 180) - 90;
+        const cloudY = 55 + (i % 4) * 48;
+        ctx.beginPath();
+        ctx.ellipse(cloudX, cloudY, 36, 13, 0, 0, Math.PI * 2);
+        ctx.ellipse(cloudX - 20, cloudY + 3, 18, 10, 0, 0, Math.PI * 2);
+        ctx.ellipse(cloudX + 18, cloudY + 3, 20, 11, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      for (const ledge of platformerPlatforms) {
+        const screenX = ledge.x - platformerCameraX;
+        if (screenX + ledge.width < 0 || screenX > width) continue;
+        ctx.fillStyle = ledge.ground ? "#80512e" : "#a86f3e";
+        ctx.fillRect(screenX, ledge.y, ledge.width, ledge.height);
+        ctx.fillStyle = "#58c96b";
+        ctx.fillRect(screenX, ledge.y, ledge.width, 7);
+      }
+
+      const goalX = platformerWorldWidth - 72 - platformerCameraX;
+      ctx.fillStyle = "#493d36";
+      ctx.fillRect(goalX, groundY - 90, 5, 90);
+      ctx.fillStyle = "#ffdf4f";
+      ctx.beginPath();
+      ctx.moveTo(goalX + 5, groundY - 88);
+      ctx.lineTo(goalX + 48, groundY - 73);
+      ctx.lineTo(goalX + 5, groundY - 58);
+      ctx.closePath();
+      ctx.fill();
+
+      const playerScreenX = platformerPlayer.x - platformerCameraX;
+      if (platformerSprite.complete && platformerSprite.naturalWidth) {
+        ctx.drawImage(
+          platformerSprite,
+          playerScreenX,
+          platformerPlayer.y,
+          platformerPlayer.width,
+          platformerPlayer.height
+        );
+      } else {
+        ctx.fillStyle = "#f0a2d4";
+        ctx.beginPath();
+        ctx.arc(playerScreenX + platformerPlayer.width / 2, platformerPlayer.y + platformerPlayer.height / 2,
+          platformerPlayer.width / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (platformerWon) {
+        ctx.fillStyle = "rgba(10, 20, 45, 0.72)";
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = "white";
+        ctx.textAlign = "center";
+        ctx.font = "bold 36px system-ui, sans-serif";
+        ctx.fillText("Yay! Meowl made it!", width / 2, height / 2 - 12);
+        ctx.font = "18px system-ui, sans-serif";
+        ctx.fillText("Tap or click to play again", width / 2, height / 2 + 26);
+      }
     }
 
     function beginAdminCountdown() {
@@ -472,7 +842,7 @@
     }
 
     textTimer = setInterval(() => {
-      if (countdownActive || adminEventActive || discoActive) return;
+      if (countdownActive || adminEventActive || discoActive || platformerActive) return;
       showRandomMessage();
       if (Math.random() < 0.01) beginAdminCountdown();
     }, 5000);
