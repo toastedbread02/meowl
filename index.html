@@ -105,6 +105,8 @@
     let floatingMeowlMotion = [];
     let animationFrameId;
     let lastAnimationFrame = 0;
+    let secretClickCount = 0;
+    let secretClickTimeout;
 
     image.addEventListener("click", () => {
       if (adminEventActive) return;
@@ -121,6 +123,21 @@
       imageResetTimeout = setTimeout(() => {
         image.src = "meowl.png";
       }, 300);
+    });
+
+    banner.addEventListener("click", () => {
+      if (countdownActive || adminEventActive) return;
+
+      secretClickCount += 1;
+      clearTimeout(secretClickTimeout);
+      if (secretClickCount >= 5) {
+        secretClickCount = 0;
+        beginAdminCountdown();
+      } else {
+        secretClickTimeout = setTimeout(() => {
+          secretClickCount = 0;
+        }, 2000);
+      }
     });
 
     function showRandomMessage() {
