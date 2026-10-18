@@ -249,7 +249,7 @@
     <canvas id="platformer-canvas"></canvas>
     <div class="platformer-title">
       <strong>Meowl Run</strong>
-      <span>Move: ← → or A/D · Jump: Space / ↑</span>
+      <span>Move: ← → or A/D · Jump: Space / ↑ · Avoid the moving spikes</span>
     </div>
     <button id="platformer-close" type="button">Close ×</button>
     <div class="platformer-touch-controls" aria-label="Touch controls">
@@ -316,6 +316,7 @@
     let platformerWorldWidth = 0;
     let platformerCameraX = 0;
     let platformerPlatforms = [];
+    let platformerHazards = [];
     let platformerWon = false;
     let jumpQueued = false;
     const platformerPlayer = {
@@ -474,24 +475,36 @@
       const groundY = platformerHeight - 38;
       platformerWorldWidth = Math.max(2400, platformerWidth * 3);
       platformerPlatforms = [];
+      platformerHazards = [];
 
       for (let x = 0; x < platformerWorldWidth; x += 600) {
         platformerPlatforms.push({
           x,
           y: groundY,
-          width: Math.min(500, platformerWorldWidth - x),
+          width: Math.min(x + 600 >= platformerWorldWidth ? 600 : 450, platformerWorldWidth - x),
           height: 60,
           ground: true
         });
+
+        if (x > 0 && platformerWorldWidth - x > 480) {
+          platformerHazards.push({
+            x: x + 210,
+            minX: x + 70,
+            maxX: x + 390,
+            y: groundY - 17,
+            radius: 17,
+            velocityX: (x % 1200 === 0 ? -1 : 1) * (2.2 + x / platformerWorldWidth)
+          });
+        }
       }
 
-      const platformHeights = [95, 155, 110, 175, 125, 165];
+      const platformHeights = [90, 160, 115, 185, 130, 175];
       let index = 0;
-      for (let x = 160; x < platformerWorldWidth - 160; x += 180) {
+      for (let x = 150; x < platformerWorldWidth - 160; x += 190) {
         platformerPlatforms.push({
           x,
           y: groundY - platformHeights[index % platformHeights.length],
-          width: 112,
+          width: 82,
           height: 16,
           ground: false
         });
@@ -557,6 +570,14 @@
         platformerPlayer.y += platformerPlayer.velocityY * frameScale;
         platformerPlayer.onGround = false;
 
+        for (const hazard of platformerHazards) {
+          hazard.x += hazard.velocityX * frameScale;
+          if (hazard.x < hazard.minX || hazard.x > hazard.maxX) {
+            hazard.x = Math.max(hazard.minX, Math.min(hazard.x, hazard.maxX));
+            hazard.velocityX *= -1;
+          }
+        }
+
         for (const ledge of platformerPlatforms) {
           const horizontallyOverlaps = platformerPlayer.x + platformerPlayer.width > ledge.x
             && platformerPlayer.x < ledge.x + ledge.width;
@@ -566,8 +587,23 @@
             platformerPlayer.y = ledge.y - platformerPlayer.height;
             platformerPlayer.velocityY = 0;
             platformerPlayer.onGround = true;
-            if (ledge.ground) platformerPlayer.checkpointX = platformerPlayer.x;
+            if (ledge.ground && platformerPlayer.x - platformerPlayer.checkpointX > 140) {
+              platformerPlayer.checkpointX = platformerPlayer.x;
+            }
           }
+        }
+
+        const hitHazard = platformerHazards.some((hazard) =>
+          platformerPlayer.x + platformerPlayer.width > hazard.x - hazard.radius
+          && platformerPlayer.x < hazard.x + hazard.radius
+          && platformerPlayer.y + platformerPlayer.height > hazard.y - hazard.radius
+          && platformerPlayer.y < hazard.y + hazard.radius
+        );
+        if (hitHazard) {
+          platformerPlayer.x = Math.max(24, platformerPlayer.checkpointX - 12);
+          platformerPlayer.y = platformerHeight - 38 - platformerPlayer.height;
+          platformerPlayer.velocityY = 0;
+          platformerPlayer.onGround = true;
         }
 
         if (platformerPlayer.y > platformerHeight + 100) {
@@ -621,6 +657,30 @@
         ctx.fillRect(screenX, ledge.y, ledge.width, ledge.height);
         ctx.fillStyle = "#58c96b";
         ctx.fillRect(screenX, ledge.y, ledge.width, 7);
+      }
+
+      for (const hazard of platformerHazards) {
+        const hazardX = hazard.x - platformerCameraX;
+        if (hazardX + hazard.radius < 0 || hazardX - hazard.radius > width) continue;
+        ctx.save();
+        ctx.translate(hazardX, hazard.y);
+        ctx.rotate(performance.now() / 180);
+        ctx.fillStyle = "#f04452";
+        ctx.strokeStyle = "#7a1427";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        for (let point = 0; point < 10; point += 1) {
+          const radius = point % 2 === 0 ? hazard.radius : hazard.radius * 0.55;
+          const angle = point * Math.PI / 5;
+          const x = Math.cos(angle) * radius;
+          const y = Math.sin(angle) * radius;
+          if (point === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
       }
 
       const goalX = platformerWorldWidth - 72 - platformerCameraX;
