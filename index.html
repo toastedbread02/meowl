@@ -48,25 +48,17 @@
       display: block;
       height: auto;
       object-fit: contain;
-      animation: meowl-burst-float 5s ease-in-out infinite alternate;
-      will-change: transform;
+      animation: meowl-pop 450ms ease-out both;
     }
 
-    @keyframes meowl-burst-float {
-      0% {
+    @keyframes meowl-pop {
+      from {
         opacity: 0.2;
-        transform: translate(0, 0) scale(0.1) rotate(0deg);
-      }
-      20% {
-        opacity: 1;
-        transform: translate(var(--dx1), var(--dy1)) scale(1.15) rotate(var(--rot1));
-      }
-      60% {
-        transform: translate(var(--dx2), var(--dy2)) scale(0.9) rotate(var(--rot2));
+        transform: scale(0.1);
       }
       100% {
         opacity: 1;
-        transform: translate(var(--dx3), var(--dy3)) scale(1) rotate(var(--rot3));
+        transform: scale(1);
       }
     }
 
@@ -110,6 +102,9 @@
     let adminEventActive = false;
     let adminAudioWasPlaying = false;
     let lastMessage = "free music wow";
+    let floatingMeowlMotion = [];
+    let animationFrameId;
+    let lastAnimationFrame = 0;
 
     image.addEventListener("click", () => {
       if (adminEventActive) return;
@@ -161,21 +156,55 @@
     function addFloatingMeowl() {
       const meowl = document.createElement("img");
       const size = 55 + Math.random() * 95;
+      const width = Math.round(size);
+      const height = Math.round(size * 850 / 770);
+      const x = Math.random() * Math.max(0, window.innerWidth - width);
+      const y = Math.random() * Math.max(0, window.innerHeight - height);
       meowl.src = "meowl3.png";
       meowl.alt = "";
-      meowl.style.width = `${size}px`;
-      meowl.style.left = `${Math.random() * 100}%`;
-      meowl.style.top = `${Math.random() * 100}%`;
-      meowl.style.setProperty("--dx1", `${Math.random() * 180 - 90}px`);
-      meowl.style.setProperty("--dy1", `${Math.random() * 180 - 90}px`);
-      meowl.style.setProperty("--dx2", `${Math.random() * 320 - 160}px`);
-      meowl.style.setProperty("--dy2", `${Math.random() * 320 - 160}px`);
-      meowl.style.setProperty("--dx3", `${Math.random() * 440 - 220}px`);
-      meowl.style.setProperty("--dy3", `${Math.random() * 440 - 220}px`);
-      meowl.style.setProperty("--rot1", `${Math.random() * 180 - 90}deg`);
-      meowl.style.setProperty("--rot2", `${Math.random() * 360 - 180}deg`);
-      meowl.style.setProperty("--rot3", `${Math.random() * 540 - 270}deg`);
+      meowl.style.width = `${width}px`;
+      meowl.style.height = `${height}px`;
+      meowl.style.left = `${x}px`;
+      meowl.style.top = `${y}px`;
       floatingMeowls.appendChild(meowl);
+
+      floatingMeowlMotion.push({
+        element: meowl,
+        x,
+        y,
+        width,
+        height,
+        vx: (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 3),
+        vy: (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 3)
+      });
+    }
+
+    function moveFloatingMeowls(timestamp) {
+      const frameScale = lastAnimationFrame
+        ? Math.min((timestamp - lastAnimationFrame) / 16.67, 3)
+        : 1;
+      lastAnimationFrame = timestamp;
+
+      floatingMeowlMotion.forEach((meowl) => {
+        const maxX = Math.max(0, window.innerWidth - meowl.width);
+        const maxY = Math.max(0, window.innerHeight - meowl.height);
+        meowl.x += meowl.vx * frameScale;
+        meowl.y += meowl.vy * frameScale;
+
+        if (meowl.x <= 0 || meowl.x >= maxX) {
+          meowl.x = Math.max(0, Math.min(meowl.x, maxX));
+          meowl.vx *= -1;
+        }
+        if (meowl.y <= 0 || meowl.y >= maxY) {
+          meowl.y = Math.max(0, Math.min(meowl.y, maxY));
+          meowl.vy *= -1;
+        }
+
+        meowl.element.style.left = `${meowl.x}px`;
+        meowl.element.style.top = `${meowl.y}px`;
+      });
+
+      if (adminEventActive) animationFrameId = requestAnimationFrame(moveFloatingMeowls);
     }
 
     function startAdminEvent() {
@@ -186,6 +215,8 @@
       adminAudio.currentTime = 0;
       adminAudio.play();
       banner.innerText = "meowl admin abuse!";
+      lastAnimationFrame = 0;
+      animationFrameId = requestAnimationFrame(moveFloatingMeowls);
 
       let floatingCount = 0;
       function burst() {
@@ -203,6 +234,8 @@
 
     function endAdminEvent() {
       clearInterval(spawnTimer);
+      cancelAnimationFrame(animationFrameId);
+      floatingMeowlMotion = [];
       floatingMeowls.replaceChildren();
       adminAudio.pause();
       adminAudio.currentTime = 0;
