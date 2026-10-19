@@ -151,6 +151,11 @@
     const adminFirstCollisionBaseTime = 4.10;
     const adminCollisionDelayMin = 0.02;
     const adminCollisionDelayMax = 0.05;
+    function trackMeowlEvent(name) {
+      if (window.umami && typeof window.umami.track === "function") {
+        window.umami.track(name);
+      }
+    }
     let imageResetTimeout;
     let textTimer;
     let countdownTimer;
@@ -201,6 +206,7 @@
 
     eventMenu.addEventListener("click", (event) => {
       const trigger = event.target.closest("[data-trigger-event]");
+      trackMeowlEvent("meowl_click");
       if (!trigger) return;
 
       eventMenu.hidden = true;
@@ -246,6 +252,7 @@
 
     function startDiscoEvent() {
       if (!canStartEvent()) return;
+      trackMeowlEvent("disco_mode");
       discoActive = true;
       discoAudio.currentTime = 0;
       discoAudio.play();
@@ -595,6 +602,7 @@
     function startAdminEvent() {
       countdownActive = false;
       adminEventActive = true;
+      trackMeowlEvent("admin_event");
       adminAudioWasPlaying = !audio.paused;
       audio.pause();
       adminAudio.currentTime = 0;
