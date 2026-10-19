@@ -364,25 +364,29 @@
       let firstCollisionFrame = false;
       if (adminEventActive && adminCollisionPlan) {
         const elapsed = Math.min(adminAudio.currentTime, adminFirstCollisionTime);
-        const travel = adminCollisionPlan.speed * elapsed * 60;
-        const firstCenterX = reflectPosition(
-          adminCollisionPlan.firstStartX + travel,
-          adminCollisionPlan.leftBound,
-          adminCollisionPlan.rightBound
-        );
-        const secondCenterX = window.innerWidth - firstCenterX;
+        const progress = elapsed / adminFirstCollisionTime;
         const first = floatingMeowlMotion[0];
         const second = floatingMeowlMotion[1];
 
         if (first && second) {
-          first.x = firstCenterX - first.width / 2;
-          second.x = secondCenterX - second.width / 2;
-          first.y = adminCollisionPlan.centerY - first.height / 2;
-          second.y = adminCollisionPlan.centerY - second.height / 2;
+          first.x = adminCollisionPlan.firstStartX
+            + (adminCollisionPlan.firstTargetX - adminCollisionPlan.firstStartX) * progress
+            - first.width / 2;
+          second.x = adminCollisionPlan.secondStartX
+            + (adminCollisionPlan.secondTargetX - adminCollisionPlan.secondStartX) * progress
+            - second.width / 2;
+          first.y = adminCollisionPlan.firstStartY
+            + (adminCollisionPlan.firstTargetY - adminCollisionPlan.firstStartY) * progress
+            - first.height / 2;
+          second.y = adminCollisionPlan.secondStartY
+            + (adminCollisionPlan.secondTargetY - adminCollisionPlan.secondStartY) * progress
+            - second.height / 2;
 
           if (adminAudio.currentTime >= adminFirstCollisionTime) {
-            first.vx = adminCollisionPlan.postCollisionVx;
-            second.vx = -adminCollisionPlan.postCollisionVx;
+            first.vx = adminCollisionPlan.firstVx;
+            first.vy = adminCollisionPlan.firstVy;
+            second.vx = adminCollisionPlan.secondVx;
+            second.vy = adminCollisionPlan.secondVy;
             adminFirstCollisionTriggered = true;
             adminCollisionPlan = null;
             firstCollisionFrame = true;
@@ -517,40 +521,67 @@
       }
     }
 
-    function reflectPosition(position, minimum, maximum) {
-      const span = maximum - minimum;
-      if (span <= 0) return minimum;
-      const doubledSpan = span * 2;
-      const offset = ((position - minimum) % doubledSpan + doubledSpan) % doubledSpan;
-      return offset <= span ? minimum + offset : maximum - (offset - span);
-    }
-
     function createAdminCollisionPlan() {
       const size = 80;
-      const width = window.innerWidth;
-      const height = size * 850 / 770;
-      const leftBound = size / 2;
-      const rightBound = width - size / 2;
-      const centerX = width / 2;
-      const centerY = window.innerHeight / 2;
+      const halfWidth = size / 2;
+      const halfHeight = size * 850 / 770 / 2;
+      const targetX = window.innerWidth * (0.4 + Math.random() * 0.2);
+      const targetY = window.innerHeight * (0.4 + Math.random() * 0.2);
+      const angle = Math.random() * Math.PI * 2;
+      const directionX = Math.cos(angle);
+      const directionY = Math.sin(angle);
+      const leftBound = halfWidth;
+      const rightBound = window.innerWidth - halfWidth;
+      const topBound = halfHeight;
+      const bottomBound = window.innerHeight - halfHeight;
+      const contactDistances = [
+        Math.abs(directionX) > 0.0001 ? size / Math.abs(directionX) : Infinity,
+        Math.abs(directionY) > 0.0001 ? halfHeight * 2 / Math.abs(directionY) : Infinity
+      ];
+      const boxContactDistance = Math.min(...contactDistances);
+
+      function distanceToEdge(dx, dy) {
+        const distances = [];
+        if (dx > 0) distances.push((rightBound - targetX) / dx);
+        else if (dx < 0) distances.push((leftBound - targetX) / dx);
+        if (dy > 0) distances.push((bottomBound - targetY) / dy);
+        else if (dy < 0) distances.push((topBound - targetY) / dy);
+        return Math.min(...distances.filter((distance) => distance >= 0));
+      }
+
+      const negativeLimit = distanceToEdge(-directionX, -directionY);
+      const positiveLimit = distanceToEdge(directionX, directionY);
+      const maxStartDistance = Math.max(0,
+        Math.min(negativeLimit, positiveLimit) - boxContactDistance / 2);
+      const minStartDistance = maxStartDistance * (0.45 + Math.random() * 0.25);
+      const firstDistance = minStartDistance + Math.random() * (maxStartDistance - minStartDistance);
+      const secondDistance = minStartDistance + Math.random() * (maxStartDistance - minStartDistance);
+      const contactGap = boxContactDistance - Math.min(4, Math.max(1, (firstDistance + secondDistance)
+        / (adminFirstCollisionTime * 60) * 0.6));
+      const firstTargetX = targetX - directionX * contactGap / 2;
+      const firstTargetY = targetY - directionY * contactGap / 2;
+      const secondTargetX = targetX + directionX * contactGap / 2;
+      const secondTargetY = targetY + directionY * contactGap / 2;
+      const firstStartX = targetX - directionX * (contactGap / 2 + firstDistance);
+      const firstStartY = targetY - directionY * (contactGap / 2 + firstDistance);
+      const secondStartX = targetX + directionX * (contactGap / 2 + secondDistance);
+      const secondStartY = targetY + directionY * (contactGap / 2 + secondDistance);
       const frameCount = adminFirstCollisionTime * 60;
-      const maxTravel = Math.max(0, 2 * rightBound - centerX - leftBound);
-      const speed = Math.min(3.5, maxTravel / frameCount);
-      const travel = speed * frameCount;
-      const needsWallBounce = travel > rightBound - centerX;
-      const firstStartX = needsWallBounce
-        ? 2 * rightBound - centerX - travel
-        : centerX - travel;
 
       return {
         size,
-        height,
-        leftBound,
-        rightBound,
-        centerY,
-        speed,
         firstStartX,
-        postCollisionVx: needsWallBounce ? -speed : speed
+        firstStartY,
+        secondStartX,
+        secondStartY,
+        firstTargetX,
+        firstTargetY,
+        secondTargetX,
+        secondTargetY,
+        firstVx: (firstTargetX - firstStartX) / frameCount,
+        firstVy: (firstTargetY - firstStartY) / frameCount,
+        secondVx: (secondTargetX - secondStartX) / frameCount,
+        secondVy: (secondTargetY - secondStartY) / frameCount
       };
     }
 
@@ -567,20 +598,17 @@
       activeCollisionPairs.clear();
       adminFirstCollisionTriggered = false;
       adminCollisionPlan = createAdminCollisionPlan();
-      const firstStartX = adminCollisionPlan.firstStartX;
-      const secondStartX = window.innerWidth - firstStartX;
-      const y = adminCollisionPlan.centerY - adminCollisionPlan.height / 2;
       addFloatingMeowl({
-        x: firstStartX - adminCollisionPlan.size / 2,
-        y,
+        x: adminCollisionPlan.firstStartX - adminCollisionPlan.size / 2,
+        y: adminCollisionPlan.firstStartY - adminCollisionPlan.size * 850 / 770 / 2,
         size: adminCollisionPlan.size,
-        velocity: { vx: adminCollisionPlan.speed, vy: 0 }
+        velocity: { vx: adminCollisionPlan.firstVx, vy: adminCollisionPlan.firstVy }
       });
       addFloatingMeowl({
-        x: secondStartX - adminCollisionPlan.size / 2,
-        y,
+        x: adminCollisionPlan.secondStartX - adminCollisionPlan.size / 2,
+        y: adminCollisionPlan.secondStartY - adminCollisionPlan.size * 850 / 770 / 2,
         size: adminCollisionPlan.size,
-        velocity: { vx: -adminCollisionPlan.speed, vy: 0 }
+        velocity: { vx: adminCollisionPlan.secondVx, vy: adminCollisionPlan.secondVy }
       });
       animationFrameId = requestAnimationFrame(moveFloatingMeowls);
       effectTimer = setTimeout(endAdminEvent, 120000);
