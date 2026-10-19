@@ -147,6 +147,7 @@
     const maxFloatingMeowls = 300;
     const discoCopiesPerCollision = 60;
     const discoBatchCooldown = 300;
+    const adminFirstCollisionTime = 4.65;
     let imageResetTimeout;
     let textTimer;
     let countdownTimer;
@@ -157,6 +158,7 @@
     let adminEventActive = false;
     let adminAudioWasPlaying = false;
     let adminFirstCollisionTriggered = false;
+    let adminCollisionPlan = null;
     let discoActive = false;
     let discoTimer;
     let discoRainbowDelay = "0ms";
@@ -348,22 +350,6 @@
     }
 
     function moveFloatingMeowls(timestamp) {
-      if (adminEventActive && !adminFirstCollisionTriggered && adminAudio.currentTime >= 4.65) {
-        adminFirstCollisionTriggered = true;
-        const first = floatingMeowlMotion[0];
-        const second = floatingMeowlMotion[1];
-        if (first && second) {
-          const centerX = window.innerWidth / 2;
-          const centerY = window.innerHeight / 2;
-          first.x = centerX - first.width / 2;
-          first.y = centerY - first.height / 2;
-          second.x = centerX - second.width / 2;
-          second.y = centerY - second.height / 2;
-          activeCollisionPairs.add("0:1");
-          spawnAdminCollisionImages(first, second);
-        }
-      }
-
       const motionCount = floatingMeowlMotion.length;
       const frameInterval = motionCount > 5000 ? 1000 / 15 : motionCount > 1000 ? 1000 / 30 : 0;
       if (frameInterval && timestamp - lastAnimationFrame < frameInterval) {
@@ -375,8 +361,40 @@
         : 1;
       lastAnimationFrame = timestamp;
 
+      let firstCollisionFrame = false;
+      if (adminEventActive && adminCollisionPlan) {
+        const elapsed = Math.min(adminAudio.currentTime, adminFirstCollisionTime);
+        const travel = adminCollisionPlan.speed * elapsed * 60;
+        const firstCenterX = reflectPosition(
+          adminCollisionPlan.firstStartX + travel,
+          adminCollisionPlan.leftBound,
+          adminCollisionPlan.rightBound
+        );
+        const secondCenterX = window.innerWidth - firstCenterX;
+        const first = floatingMeowlMotion[0];
+        const second = floatingMeowlMotion[1];
+
+        if (first && second) {
+          first.x = firstCenterX - first.width / 2;
+          second.x = secondCenterX - second.width / 2;
+          first.y = adminCollisionPlan.centerY - first.height / 2;
+          second.y = adminCollisionPlan.centerY - second.height / 2;
+
+          if (adminAudio.currentTime >= adminFirstCollisionTime) {
+            first.vx = adminCollisionPlan.postCollisionVx;
+            second.vx = -adminCollisionPlan.postCollisionVx;
+            adminFirstCollisionTriggered = true;
+            adminCollisionPlan = null;
+            firstCollisionFrame = true;
+            spawnTimer = setInterval(spawnAdminImageBatch, 700);
+          }
+        }
+      }
+
       for (let i = 0; i < motionCount; i += 1) {
         const meowl = floatingMeowlMotion[i];
+        if (adminCollisionPlan && i < 2) continue;
+        if (firstCollisionFrame && i < 2) continue;
         const maxX = Math.max(0, window.innerWidth - meowl.width);
         const maxY = Math.max(0, window.innerHeight - meowl.height);
         meowl.x += meowl.vx * frameScale;
@@ -499,6 +517,43 @@
       }
     }
 
+    function reflectPosition(position, minimum, maximum) {
+      const span = maximum - minimum;
+      if (span <= 0) return minimum;
+      const doubledSpan = span * 2;
+      const offset = ((position - minimum) % doubledSpan + doubledSpan) % doubledSpan;
+      return offset <= span ? minimum + offset : maximum - (offset - span);
+    }
+
+    function createAdminCollisionPlan() {
+      const size = 80;
+      const width = window.innerWidth;
+      const height = size * 850 / 770;
+      const leftBound = size / 2;
+      const rightBound = width - size / 2;
+      const centerX = width / 2;
+      const centerY = window.innerHeight / 2;
+      const frameCount = adminFirstCollisionTime * 60;
+      const maxTravel = Math.max(0, 2 * rightBound - centerX - leftBound);
+      const speed = Math.min(3.5, maxTravel / frameCount);
+      const travel = speed * frameCount;
+      const needsWallBounce = travel > rightBound - centerX;
+      const firstStartX = needsWallBounce
+        ? 2 * rightBound - centerX - travel
+        : centerX - travel;
+
+      return {
+        size,
+        height,
+        leftBound,
+        rightBound,
+        centerY,
+        speed,
+        firstStartX,
+        postCollisionVx: needsWallBounce ? -speed : speed
+      };
+    }
+
     function startAdminEvent() {
       countdownActive = false;
       adminEventActive = true;
@@ -511,24 +566,39 @@
       lastCollisionCheckAt = -Infinity;
       activeCollisionPairs.clear();
       adminFirstCollisionTriggered = false;
+      adminCollisionPlan = createAdminCollisionPlan();
+      const firstStartX = adminCollisionPlan.firstStartX;
+      const secondStartX = window.innerWidth - firstStartX;
+      const y = adminCollisionPlan.centerY - adminCollisionPlan.height / 2;
+      addFloatingMeowl({
+        x: firstStartX - adminCollisionPlan.size / 2,
+        y,
+        size: adminCollisionPlan.size,
+        velocity: { vx: adminCollisionPlan.speed, vy: 0 }
+      });
+      addFloatingMeowl({
+        x: secondStartX - adminCollisionPlan.size / 2,
+        y,
+        size: adminCollisionPlan.size,
+        velocity: { vx: -adminCollisionPlan.speed, vy: 0 }
+      });
       animationFrameId = requestAnimationFrame(moveFloatingMeowls);
-
-      function burst() {
-        for (let i = 0; i < 4 && floatingMeowlMotion.length < maxFloatingMeowls; i += 1) {
-          addFloatingMeowl();
-        }
-        if (floatingMeowlMotion.length >= maxFloatingMeowls) clearInterval(spawnTimer);
-      }
-
-      burst();
-      spawnTimer = setInterval(burst, 700);
       effectTimer = setTimeout(endAdminEvent, 120000);
+    }
+
+    function spawnAdminImageBatch() {
+      for (let i = 0; i < 4 && floatingMeowlMotion.length < maxFloatingMeowls; i += 1) {
+        addFloatingMeowl();
+      }
+      if (floatingMeowlMotion.length >= maxFloatingMeowls) clearInterval(spawnTimer);
     }
 
     function endAdminEvent() {
       clearInterval(spawnTimer);
       clearTimeout(effectTimer);
       cancelAnimationFrame(animationFrameId);
+      adminCollisionPlan = null;
+      adminFirstCollisionTriggered = false;
       floatingMeowlMotion = [];
       floatingContext.clearRect(0, 0, window.innerWidth, window.innerHeight);
       adminAudio.pause();
