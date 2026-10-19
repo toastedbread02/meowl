@@ -34,8 +34,6 @@
       padding: 20px;
       text-align: center;
       background: yellow;
-      cursor: pointer;
-      user-select: none;
     }
 
     #event-menu {
@@ -45,13 +43,21 @@
       z-index: 8;
       display: grid;
       gap: 10px;
-      width: min(280px, calc(100vw - 40px));
-      padding: 16px;
-      border: 2px solid #ffeb3b;
-      border-radius: 12px;
-      background: rgba(20, 20, 20, 0.95);
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+      padding: 8px;
+      border: 1px solid #777;
+      background: white;
       transform: translate(-50%, -50%);
+    }
+
+    #event-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 7;
+      background: rgba(0, 0, 0, 0.65);
+    }
+
+    #event-backdrop[hidden] {
+      display: none;
     }
 
     #event-menu[hidden] {
@@ -59,11 +65,8 @@
     }
 
     #event-menu button {
-      padding: 12px;
-      border: 0;
-      border-radius: 7px;
-      font: bold 16px system-ui, sans-serif;
-      cursor: pointer;
+      display: block;
+      width: 100%;
     }
 
     #meowl-image.disco-mode {
@@ -96,7 +99,8 @@
   </style>
 </head>
 <body>
-  <div id="status-banner" role="button" tabindex="0" aria-label="Click three times to open the event menu">free music wow</div>
+  <div id="status-banner">free music wow</div>
+  <div id="event-backdrop" hidden></div>
   <section id="event-menu" aria-label="Event menu" hidden>
     <button type="button" data-trigger-event="disco">Start Disco</button>
     <button type="button" data-trigger-event="admin">Start Admin Abuse</button>
@@ -114,6 +118,7 @@
     const adminAudio = document.getElementById("admin-audio");
     const discoAudio = document.getElementById("disco-audio");
     const banner = document.getElementById("status-banner");
+    const eventBackdrop = document.getElementById("event-backdrop");
     const eventMenu = document.getElementById("event-menu");
     const floatingMeowls = document.getElementById("floating-meowls");
     const floatingContext = floatingMeowls.getContext("2d", { alpha: true });
@@ -172,15 +177,14 @@
       if (bannerClickCount === 3) {
         bannerClickCount = 0;
         eventMenu.hidden = false;
+        eventBackdrop.hidden = false;
       }
     }
 
     banner.addEventListener("click", countBannerClick);
-    banner.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        countBannerClick();
-      }
+    eventBackdrop.addEventListener("click", () => {
+      eventMenu.hidden = true;
+      eventBackdrop.hidden = true;
     });
 
     eventMenu.addEventListener("click", (event) => {
@@ -188,6 +192,7 @@
       if (!trigger) return;
 
       eventMenu.hidden = true;
+      eventBackdrop.hidden = true;
       clearTimeout(countdownTimer);
       countdownActive = false;
       discoCountdownActive = false;
