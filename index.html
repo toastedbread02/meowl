@@ -147,7 +147,9 @@
     const maxFloatingMeowls = 300;
     const discoCopiesPerCollision = 60;
     const discoBatchCooldown = 300;
-    const adminFirstCollisionTime = 4.65;
+    const adminFirstCollisionBaseTime = 4.35;
+    const adminCollisionDelayMin = 0.02;
+    const adminCollisionDelayMax = 0.05;
     let imageResetTimeout;
     let textTimer;
     let countdownTimer;
@@ -363,8 +365,8 @@
 
       let firstCollisionFrame = false;
       if (adminEventActive && adminCollisionPlan) {
-        const elapsed = Math.min(adminAudio.currentTime, adminFirstCollisionTime);
-        const progress = elapsed / adminFirstCollisionTime;
+        const elapsed = Math.min(adminAudio.currentTime, adminCollisionPlan.collisionTime);
+        const progress = elapsed / adminCollisionPlan.collisionTime;
         const first = floatingMeowlMotion[0];
         const second = floatingMeowlMotion[1];
 
@@ -382,7 +384,7 @@
             + (adminCollisionPlan.secondTargetY - adminCollisionPlan.secondStartY) * progress
             - second.height / 2;
 
-          if (adminAudio.currentTime >= adminFirstCollisionTime) {
+          if (adminAudio.currentTime >= adminCollisionPlan.collisionTime) {
             first.vx = adminCollisionPlan.firstVx;
             first.vy = adminCollisionPlan.firstVy;
             second.vx = adminCollisionPlan.secondVx;
@@ -523,6 +525,9 @@
 
     function createAdminCollisionPlan() {
       const size = 80;
+      const collisionTime = adminFirstCollisionBaseTime
+        + adminCollisionDelayMin
+        + Math.random() * (adminCollisionDelayMax - adminCollisionDelayMin);
       const halfWidth = size / 2;
       const halfHeight = size * 850 / 770 / 2;
       const targetX = window.innerWidth * (0.4 + Math.random() * 0.2);
@@ -557,7 +562,7 @@
       const firstDistance = minStartDistance + Math.random() * (maxStartDistance - minStartDistance);
       const secondDistance = minStartDistance + Math.random() * (maxStartDistance - minStartDistance);
       const contactGap = boxContactDistance - Math.min(4, Math.max(1, (firstDistance + secondDistance)
-        / (adminFirstCollisionTime * 60) * 0.6));
+        / (collisionTime * 60) * 0.6));
       const firstTargetX = targetX - directionX * contactGap / 2;
       const firstTargetY = targetY - directionY * contactGap / 2;
       const secondTargetX = targetX + directionX * contactGap / 2;
@@ -566,10 +571,11 @@
       const firstStartY = targetY - directionY * (contactGap / 2 + firstDistance);
       const secondStartX = targetX + directionX * (contactGap / 2 + secondDistance);
       const secondStartY = targetY + directionY * (contactGap / 2 + secondDistance);
-      const frameCount = adminFirstCollisionTime * 60;
+      const frameCount = collisionTime * 60;
 
       return {
         size,
+        collisionTime,
         firstStartX,
         firstStartY,
         secondStartX,
