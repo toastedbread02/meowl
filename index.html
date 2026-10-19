@@ -6,6 +6,12 @@
   <title>Meowl</title>
   <link rel="icon" type="image/png" href="icon.png">
   <style>
+    * {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      user-select: none;
+    }
+
     html,
     body {
       width: 100%;
@@ -217,6 +223,10 @@
     function triggerMeowReaction() {
       image.src = "meowl2.png";
       meowSound.currentTime = 0;
+      meowSound.playbackRate = 0.7 + Math.random() * 0.6;
+      meowSound.preservesPitch = false;
+      meowSound.webkitPreservesPitch = false;
+      meowSound.mozPreservesPitch = false;
       meowSound.play();
       clearTimeout(imageResetTimeout);
       imageResetTimeout = setTimeout(() => {
