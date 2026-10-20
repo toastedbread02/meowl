@@ -103,6 +103,48 @@
       pointer-events: none;
     }
 
+    #meowl-visitor {
+      position: fixed;
+      left: 12px;
+      bottom: 0;
+      z-index: 4;
+      display: block;
+      width: min(25vw, 200px);
+      max-height: 35vh;
+      object-fit: contain;
+      pointer-events: none;
+      transform: translateX(-120%);
+      will-change: transform;
+    }
+
+    #meowl-visitor[hidden] {
+      display: none;
+    }
+
+    #meowl-visitor.walking-in {
+      animation: meowl-walk-in 1.2s ease-out forwards;
+    }
+
+    #meowl-visitor.walking-out {
+      animation: meowl-walk-out 1.2s ease-in forwards;
+    }
+
+    @keyframes meowl-walk-in {
+      0% { transform: translate(-120%, 0); }
+      25% { transform: translate(-85%, -5px); }
+      50% { transform: translate(-55%, 0); }
+      75% { transform: translate(-25%, -5px); }
+      100% { transform: translate(0, 0); }
+    }
+
+    @keyframes meowl-walk-out {
+      0% { transform: translate(0, 0); }
+      25% { transform: translate(-25%, -5px); }
+      50% { transform: translate(-55%, 0); }
+      75% { transform: translate(-85%, -5px); }
+      100% { transform: translate(-120%, 0); }
+    }
+
   </style>
 </head>
 <body>
@@ -113,6 +155,7 @@
     <button type="button" data-trigger-event="admin">Start Admin Abuse</button>
   </section>
   <img id="meowl-image" src="meowl.png" alt="Meowl">
+  <img id="meowl-visitor" src="meowl3.png" alt="" aria-hidden="true" hidden>
   <audio id="meowl-audio" src="meowl.mp3" loop></audio>
   <audio id="meow-sound" src="meow.mp3" preload="auto"></audio>
   <audio id="admin-audio" src="meowlwow.mp3" loop preload="auto"></audio>
@@ -121,6 +164,7 @@
   <script>
     const audio = document.getElementById("meowl-audio");
     const image = document.getElementById("meowl-image");
+    const meowlVisitor = document.getElementById("meowl-visitor");
     const meowSound = document.getElementById("meow-sound");
     const adminAudio = document.getElementById("admin-audio");
     const discoAudio = document.getElementById("disco-audio");
@@ -151,9 +195,14 @@
     const adminFirstCollisionBaseTime = 4.10;
     const adminCollisionDelayMin = 0.02;
     const adminCollisionDelayMax = 0.05;
-    function trackMeowlEvent(name) {
-      if (window.umami && typeof window.umami.track === "function") {
-        window.umami.track(name);
+    function trackMeowlEvent(name, properties) {
+      try {
+        const tracker = window.umami;
+        if (!tracker || typeof tracker.track !== "function") return;
+        const result = tracker.track(name, properties);
+        if (result && typeof result.catch === "function") result.catch(() => {});
+      } catch {
+        // Analytics is optional and must never interrupt the site.
       }
     }
     let imageResetTimeout;
@@ -168,6 +217,7 @@
     let adminFirstCollisionTriggered = false;
     let adminCollisionPlan = null;
     let discoActive = false;
+    let discoTrigger = null;
     let discoTimer;
     let discoRainbowDelay = "0ms";
     let lastMessage = "free music wow";
@@ -178,6 +228,17 @@
     let animationFrameId;
     let lastAnimationFrame = 0;
     let bannerClickCount = 0;
+    let mainMusicPlaying = false;
+    let meowlVisitActive = false;
+
+    audio.addEventListener("playing", () => {
+      if (mainMusicPlaying) return;
+      mainMusicPlaying = true;
+      trackMeowlEvent("music_started");
+    });
+    audio.addEventListener("pause", () => {
+      mainMusicPlaying = false;
+    });
 
     function resizeFloatingCanvas() {
       const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -193,6 +254,9 @@
       bannerClickCount += 1;
       if (bannerClickCount === 3) {
         bannerClickCount = 0;
+        if (eventMenu.hidden) {
+          trackMeowlEvent("event_menu_opened", { trigger: "banner_clicks" });
+        }
         eventMenu.hidden = false;
         eventBackdrop.hidden = false;
       }
@@ -206,7 +270,6 @@
 
     eventMenu.addEventListener("click", (event) => {
       const trigger = event.target.closest("[data-trigger-event]");
-      trackMeowlEvent("meowl_click");
       if (!trigger) return;
 
       eventMenu.hidden = true;
@@ -214,11 +277,11 @@
       clearTimeout(countdownTimer);
       countdownActive = false;
       discoCountdownActive = false;
-      if (discoActive) endDiscoEvent();
+      if (discoActive) endDiscoEvent("interrupted");
       if (adminEventActive) endAdminEvent();
 
-      if (trigger.dataset.triggerEvent === "disco") startDiscoEvent();
-      else startAdminEvent();
+      if (trigger.dataset.triggerEvent === "disco") startDiscoEvent("secret_menu");
+      else startAdminEvent("secret_menu");
     });
 
     image.addEventListener("click", () => {
@@ -250,10 +313,30 @@
       return !countdownActive && !discoCountdownActive && !adminEventActive && !discoActive;
     }
 
-    function startDiscoEvent() {
+    function showMeowlVisitor() {
+      if (meowlVisitActive) return;
+      meowlVisitActive = true;
+      trackMeowlEvent("meowl_peek");
+      meowlVisitor.hidden = false;
+      meowlVisitor.classList.add("walking-in");
+
+      const stareDuration = 30000 + Math.random() * 30000;
+      setTimeout(() => {
+        meowlVisitor.classList.remove("walking-in");
+        meowlVisitor.classList.add("walking-out");
+        setTimeout(() => {
+          meowlVisitor.hidden = true;
+          meowlVisitor.classList.remove("walking-out");
+          meowlVisitActive = false;
+        }, 1200);
+      }, 1200 + stareDuration);
+    }
+
+    function startDiscoEvent(trigger) {
       if (!canStartEvent()) return;
-      trackMeowlEvent("disco_mode");
       discoActive = true;
+      discoTrigger = trigger;
+      trackMeowlEvent("disco_started", { trigger });
       discoAudio.currentTime = 0;
       discoAudio.play();
       discoRainbowDelay = `${-(performance.now() % 2000)}ms`;
@@ -270,16 +353,22 @@
       for (let i = 0; i < 2; i += 1) addFloatingMeowl();
       lastAnimationFrame = 0;
       animationFrameId = requestAnimationFrame(moveFloatingMeowls);
-      discoTimer = setTimeout(endDiscoEvent, 20000);
+      discoTimer = setTimeout(() => endDiscoEvent("duration_elapsed"), 20000);
     }
 
-    function endDiscoEvent() {
+    function endDiscoEvent(endReason) {
+      if (!discoActive) return;
       clearTimeout(discoTimer);
       image.classList.remove("disco-mode");
       image.style.removeProperty("animation-delay");
       floatingMeowls.classList.remove("disco-mode");
       floatingMeowls.style.removeProperty("animation-delay");
       discoActive = false;
+      trackMeowlEvent("disco_ended", {
+        trigger: discoTrigger,
+        end_reason: endReason
+      });
+      discoTrigger = null;
       cancelAnimationFrame(animationFrameId);
       floatingMeowlMotion = [];
       activeCollisionPairs.clear();
@@ -297,6 +386,7 @@
 
       lastMessage = message;
       banner.innerText = message;
+      if (Math.random() < 0.25) showMeowlVisitor();
     }
 
     function beginAdminCountdown() {
@@ -306,7 +396,7 @@
       function updateCountdown() {
         const secondsLeft = Math.ceil((countdownEndsAt - Date.now()) / 1000);
         if (secondsLeft <= 0) {
-          startAdminEvent();
+          startAdminEvent("countdown");
           return;
         }
 
@@ -327,7 +417,7 @@
         const secondsLeft = Math.ceil((countdownEndsAt - Date.now()) / 1000);
         if (secondsLeft <= 0) {
           discoCountdownActive = false;
-          startDiscoEvent();
+          startDiscoEvent("countdown");
           return;
         }
 
@@ -492,7 +582,10 @@
                     });
                   }
                 } else if (adminEventActive) {
-                  if (adminFirstCollisionTriggered) spawnAdminCollisionImages(first, second);
+                  if (adminFirstCollisionTriggered) {
+                    trackMeowlEvent("admin_collision", { collision: true });
+                    spawnAdminCollisionImages(first, second);
+                  }
                 }
               }
             }
@@ -599,10 +692,10 @@
       };
     }
 
-    function startAdminEvent() {
+    function startAdminEvent(trigger) {
       countdownActive = false;
       adminEventActive = true;
-      trackMeowlEvent("admin_event");
+      trackMeowlEvent("admin_event_started", { trigger });
       adminAudioWasPlaying = !audio.paused;
       audio.pause();
       adminAudio.currentTime = 0;
