@@ -215,6 +215,7 @@
     let adminEventActive = false;
     let adminAudioWasPlaying = false;
     let adminFirstCollisionTriggered = false;
+    let adminCollisionTracked = false;
     let adminCollisionPlan = null;
     let discoActive = false;
     let discoTrigger = null;
@@ -583,7 +584,10 @@
                   }
                 } else if (adminEventActive) {
                   if (adminFirstCollisionTriggered) {
-                    trackMeowlEvent("admin_collision", { collision: true });
+                    if (!adminCollisionTracked) {
+                      trackMeowlEvent("admin_collision", { collision: true });
+                      adminCollisionTracked = true;
+                    }
                     spawnAdminCollisionImages(first, second);
                   }
                 }
@@ -705,6 +709,7 @@
       lastCollisionCheckAt = -Infinity;
       activeCollisionPairs.clear();
       adminFirstCollisionTriggered = false;
+      adminCollisionTracked = false;
       adminCollisionPlan = createAdminCollisionPlan();
       addFloatingMeowl({
         x: adminCollisionPlan.firstStartX - adminCollisionPlan.size / 2,
@@ -735,6 +740,7 @@
       cancelAnimationFrame(animationFrameId);
       adminCollisionPlan = null;
       adminFirstCollisionTriggered = false;
+      adminCollisionTracked = false;
       floatingMeowlMotion = [];
       floatingContext.clearRect(0, 0, window.innerWidth, window.innerHeight);
       adminAudio.pause();
