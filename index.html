@@ -152,31 +152,96 @@
       fill: none;
       stroke-linecap: round;
       stroke-linejoin: round;
+      vector-effect: non-scaling-stroke;
       stroke-dasharray: 1;
       stroke-dashoffset: 1;
-      animation: crack-line-draw 0.55s ease-out forwards;
     }
 
     #crack-lines .crack-shadow {
       stroke: #080808;
-      stroke-width: 12;
+      stroke-width: 22;
     }
 
     #crack-lines .crack-highlight {
-      stroke: rgba(255, 255, 255, 0.92);
-      stroke-width: 3;
+      stroke: #fff;
+      stroke-width: 6;
+      filter: drop-shadow(0 0 5px #fff);
     }
 
     #crack-line-two-shadow,
     #crack-line-two-highlight {
       opacity: 0;
-      animation: none;
+    }
+
+    #crack-lines.first-crack #crack-line-one-shadow,
+    #crack-lines.first-crack #crack-line-one-highlight {
+      animation: crack-line-draw 0.55s ease-out forwards;
     }
 
     #crack-lines.second-crack #crack-line-two-shadow,
     #crack-lines.second-crack #crack-line-two-highlight {
       opacity: 1;
       animation: crack-line-draw 0.55s ease-out forwards;
+    }
+
+    #rebuild-workers {
+      position: fixed;
+      inset: 0;
+      z-index: 4;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    #rebuild-workers[hidden] {
+      display: none;
+    }
+
+    .rebuild-worker {
+      position: absolute;
+      bottom: 8px;
+      width: 52px;
+      height: 58px;
+      animation: worker-search 1.8s ease-in-out infinite alternate;
+    }
+
+    .rebuild-worker img {
+      position: absolute;
+      bottom: 0;
+      left: 3px;
+      width: 46px;
+      height: auto;
+      animation: worker-bob 0.42s steps(2, end) infinite;
+    }
+
+    .worker-hat {
+      position: absolute;
+      top: 5px;
+      left: 14px;
+      z-index: 1;
+      width: 23px;
+      height: 11px;
+      border-radius: 10px 10px 2px 2px;
+      background: #ff8a00;
+      transform: rotate(-8deg);
+    }
+
+    .worker-hat::after {
+      position: absolute;
+      right: -4px;
+      bottom: -2px;
+      left: -4px;
+      height: 3px;
+      border-radius: 3px;
+      background: #db6500;
+      content: "";
+    }
+
+    @keyframes worker-search {
+      to { transform: translateX(24px); }
+    }
+
+    @keyframes worker-bob {
+      50% { transform: translateY(-3px); }
     }
 
     @keyframes crack-line-draw {
@@ -216,6 +281,7 @@
     <path id="crack-line-two-highlight" class="crack-highlight" pathLength="1" d="M 508 0 L 479 83 L 525 156 L 462 230 L 505 307 L 448 379 L 486 450 L 424 524 L 468 598 L 407 675 L 451 748 L 392 821 L 432 900 L 382 1000"></path>
   </svg>
   <canvas id="crack-shards" aria-hidden="true" hidden></canvas>
+  <div id="rebuild-workers" aria-hidden="true" hidden></div>
   <img id="meowl-visitor" src="meowl3.png" alt="" aria-hidden="true" hidden>
   <audio id="meowl-audio" src="meowl.mp3" loop></audio>
   <audio id="meow-sound" src="meow.mp3" preload="auto"></audio>
@@ -230,6 +296,7 @@
     const crackShards = document.getElementById("crack-shards");
     const crackContext = crackShards.getContext("2d");
     const crackAudio = document.getElementById("crackopen-audio");
+    const rebuildWorkers = document.getElementById("rebuild-workers");
     const meowlVisitor = document.getElementById("meowl-visitor");
     const meowSound = document.getElementById("meow-sound");
     const adminAudio = document.getElementById("admin-audio");
@@ -243,6 +310,8 @@
     floatingSprite.src = "meowl3.png";
     const crackSprite = new Image();
     crackSprite.src = "meowl👀.png";
+    const rebuildSprite = new Image();
+    rebuildSprite.src = "meowl.png";
     const rotatingMessages = [
       "free music meowl",
       "free musics",
@@ -307,6 +376,10 @@
     let crackShatterFrame;
     let lastCrackFrame = 0;
     let crackPieces = [];
+    let crackRebuilding = false;
+    let crackRebuildStartedAt = 0;
+    let crackRebuildTimer;
+    let crackRebuildStartTimer;
 
     audio.addEventListener("playing", () => {
       if (mainMusicPlaying) return;
@@ -414,13 +487,18 @@
     }
 
     function resetCrackingOpen() {
-      if (!crackingOpenActive) return;
+      if (!crackingOpenActive || crackingStage >= 3) return;
       clearTimeout(crackingIdleTimer);
       clearTimeout(crackTextTimer);
+      clearTimeout(crackRebuildStartTimer);
+      clearTimeout(crackRebuildTimer);
       cancelAnimationFrame(crackShatterFrame);
       crackShards.hidden = true;
+      rebuildWorkers.hidden = true;
+      rebuildWorkers.replaceChildren();
       crackContext.clearRect(0, 0, crackShards.width, crackShards.height);
       crackLines.hidden = true;
+      crackLines.classList.remove("first-crack");
       crackLines.classList.remove("second-crack");
       document.body.classList.remove("cracking-open");
       image.style.visibility = "";
@@ -445,7 +523,9 @@
       image.src = "meowl👀.png";
       banner.innerText = "uhmm what";
       crackLines.hidden = false;
+      crackLines.classList.remove("first-crack");
       crackLines.classList.remove("second-crack");
+      crackLines.classList.add("first-crack");
       trackMeowlEvent("cracking_open");
       playCrackSound();
       restartCrackingIdleTimer();
@@ -464,11 +544,73 @@
         image.style.visibility = "hidden";
         startCrackShatter();
         playCrackSound();
+        clearTimeout(crackingIdleTimer);
         crackTextTimer = setTimeout(() => {
           if (crackingOpenActive && crackingStage === 3) banner.innerText = "..";
         }, 1000);
+        crackRebuildStartTimer = setTimeout(startCrackRebuild, 20000);
+        return;
       }
       restartCrackingIdleTimer();
+    }
+
+    function startCrackRebuild() {
+      if (!crackingOpenActive || crackingStage !== 3) return;
+      if (!rebuildSprite.complete || !rebuildSprite.naturalWidth) {
+        rebuildSprite.addEventListener("load", startCrackRebuild, { once: true });
+        return;
+      }
+
+      crackRebuilding = true;
+      crackRebuildStartedAt = performance.now();
+      for (const piece of crackPieces) {
+        piece.rebuildFromX = piece.dx;
+        piece.rebuildFromY = piece.dy;
+        piece.rebuildFromRotation = piece.rotation;
+        piece.rebuildDelay = Math.random() * 41000;
+        piece.rebuildDuration = 10000 + Math.random() * 8000;
+      }
+
+      const workerPositions = [8, 27, 47, 67, 87];
+      rebuildWorkers.replaceChildren();
+      workerPositions.forEach((position, index) => {
+        const worker = document.createElement("div");
+        worker.className = "rebuild-worker";
+        worker.style.left = `${position}%`;
+        worker.style.animationDuration = `${1.3 + Math.random() * 1.6}s`;
+        worker.style.animationDelay = `${index * 0.13}s`;
+        const imageElement = document.createElement("img");
+        imageElement.src = "meowl3.png";
+        imageElement.alt = "";
+        const hat = document.createElement("span");
+        hat.className = "worker-hat";
+        worker.append(imageElement, hat);
+        rebuildWorkers.append(worker);
+      });
+      rebuildWorkers.hidden = false;
+      crackShards.hidden = false;
+      lastCrackFrame = 0;
+      crackShatterFrame = requestAnimationFrame(moveCrackShards);
+      crackRebuildTimer = setTimeout(finishCrackRebuild, 60000);
+    }
+
+    function finishCrackRebuild() {
+      if (!crackingOpenActive || !crackRebuilding) return;
+      clearTimeout(crackRebuildTimer);
+      cancelAnimationFrame(crackShatterFrame);
+      crackRebuilding = false;
+      crackShards.hidden = true;
+      crackContext.clearRect(0, 0, crackShards.width, crackShards.height);
+      rebuildWorkers.hidden = true;
+      rebuildWorkers.replaceChildren();
+      document.body.classList.remove("cracking-open");
+      image.style.visibility = "";
+      image.hidden = false;
+      image.src = "meowl.png";
+      banner.innerText = crackingOriginalMessage;
+      crackPieces = [];
+      crackingStage = 0;
+      crackingOpenActive = false;
     }
 
     function startCrackShatter() {
@@ -497,6 +639,7 @@
       const sourceX = (crackSprite.naturalWidth - sourceWidth) / 2;
       const sourceY = (crackSprite.naturalHeight - sourceHeight) / 2;
       const vertices = [];
+      const jaggedEdges = new Map();
       crackPieces = [];
 
       for (let row = 0; row <= rows; row += 1) {
@@ -506,6 +649,7 @@
           const jitterX = edge ? 0 : (Math.random() - 0.5) * pieceWidth * 0.7;
           const jitterY = edge ? 0 : (Math.random() - 0.5) * pieceHeight * 0.7;
           vertexRow.push({
+            id: row * (columns + 1) + column,
             x: column * pieceWidth + jitterX,
             y: row * pieceHeight + jitterY
           });
@@ -524,14 +668,43 @@
             : [[topLeft, topRight, bottomLeft], [topRight, bottomRight, bottomLeft]];
 
           for (const points of triangles) {
-            const centerX = points.reduce((sum, point) => sum + point.x, 0) / points.length;
-            const centerY = points.reduce((sum, point) => sum + point.y, 0) / points.length;
-            const minX = Math.min(...points.map((point) => point.x));
-            const maxX = Math.max(...points.map((point) => point.x));
-            const minY = Math.min(...points.map((point) => point.y));
-            const maxY = Math.max(...points.map((point) => point.y));
+            const polygon = [];
+            for (let edgeIndex = 0; edgeIndex < points.length; edgeIndex += 1) {
+              const start = points[edgeIndex];
+              const end = points[(edgeIndex + 1) % points.length];
+              const edgeKey = `${Math.min(start.id, end.id)}:${Math.max(start.id, end.id)}`;
+              if (!jaggedEdges.has(edgeKey)) {
+                const forward = start.id < end.id;
+                const first = forward ? start : end;
+                const last = forward ? end : start;
+                const dx = last.x - first.x;
+                const dy = last.y - first.y;
+                const length = Math.hypot(dx, dy) || 1;
+                const edgePoints = [first];
+                for (let step = 1; step <= 3; step += 1) {
+                  const progress = step / 4;
+                  const jaggedness = (Math.random() - 0.5) * 14;
+                  edgePoints.push({
+                    x: first.x + dx * progress - dy / length * jaggedness,
+                    y: first.y + dy * progress + dx / length * jaggedness
+                  });
+                }
+                edgePoints.push(last);
+                jaggedEdges.set(edgeKey, edgePoints);
+              }
+              const edgePoints = jaggedEdges.get(edgeKey);
+              const orderedPoints = start.id < end.id ? edgePoints : edgePoints.slice().reverse();
+              polygon.push(...orderedPoints.slice(0, -1));
+            }
+
+            const centerX = polygon.reduce((sum, point) => sum + point.x, 0) / polygon.length;
+            const centerY = polygon.reduce((sum, point) => sum + point.y, 0) / polygon.length;
+            const minX = Math.min(...polygon.map((point) => point.x));
+            const maxX = Math.max(...polygon.map((point) => point.x));
+            const minY = Math.min(...polygon.map((point) => point.y));
+            const maxY = Math.max(...polygon.map((point) => point.y));
             crackPieces.push({
-              points,
+              points: polygon,
               centerX,
               centerY,
               minX,
@@ -560,6 +733,7 @@
     function moveCrackShards(timestamp) {
       const width = window.innerWidth;
       const height = window.innerHeight;
+      const rebuildingFor = crackRebuilding ? timestamp - crackRebuildStartedAt : 0;
       const frameScale = lastCrackFrame
         ? Math.min((timestamp - lastCrackFrame) / 16.67, 3)
         : 1;
@@ -570,11 +744,21 @@
       let piecesRemain = false;
 
       for (const piece of crackPieces) {
-        piece.dx += piece.vx * frameScale;
-        piece.vy += 0.17 * frameScale;
-        piece.dy += piece.vy * frameScale;
-        piece.rotation += piece.rotationSpeed * frameScale;
-        if (piece.centerY + piece.dy < height + piece.height) piecesRemain = true;
+        if (crackRebuilding) {
+          const pieceElapsed = rebuildingFor - piece.rebuildDelay;
+          const progress = Math.max(0, Math.min(1, pieceElapsed / piece.rebuildDuration));
+          const eased = progress * progress * (3 - 2 * progress);
+          piece.dx = piece.rebuildFromX * (1 - eased);
+          piece.dy = piece.rebuildFromY * (1 - eased);
+          piece.rotation = piece.rebuildFromRotation * (1 - eased);
+          if (progress < 1) piecesRemain = true;
+        } else {
+          piece.dx += piece.vx * frameScale;
+          piece.vy += 0.17 * frameScale;
+          piece.dy += piece.vy * frameScale;
+          piece.rotation += piece.rotationSpeed * frameScale;
+          if (piece.centerY + piece.dy < height + piece.height) piecesRemain = true;
+        }
 
         crackContext.save();
         crackContext.translate(piece.centerX + piece.dx, piece.centerY + piece.dy);
@@ -589,16 +773,25 @@
         crackContext.closePath();
         crackContext.clip();
         crackContext.drawImage(
-          crackSprite,
+          crackRebuilding ? rebuildSprite : crackSprite,
           piece.sx, piece.sy, piece.sw, piece.sh,
           piece.minX - piece.centerX, piece.minY - piece.centerY,
           piece.width, piece.height
         );
+        crackContext.strokeStyle = "rgba(0, 0, 0, 0.9)";
+        crackContext.lineWidth = 1.5;
+        crackContext.stroke();
+        crackContext.strokeStyle = "rgba(255, 255, 255, 0.45)";
+        crackContext.lineWidth = 0.6;
         crackContext.stroke();
         crackContext.restore();
       }
 
-      if (piecesRemain && crackingOpenActive) {
+      if (crackRebuilding && rebuildingFor >= 60000) {
+        finishCrackRebuild();
+      } else if (crackRebuilding && crackingOpenActive) {
+        crackShatterFrame = requestAnimationFrame(moveCrackShards);
+      } else if (piecesRemain && crackingOpenActive) {
         crackShatterFrame = requestAnimationFrame(moveCrackShards);
       } else {
         crackShards.hidden = true;
