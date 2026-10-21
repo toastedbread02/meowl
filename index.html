@@ -32,6 +32,15 @@
       object-fit: cover;
     }
 
+    #background-meowls {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
     #status-banner {
       position: fixed;
       top: 0;
@@ -278,6 +287,7 @@
     <button type="button" data-trigger-event="admin">Start Admin Abuse</button>
   </section>
   <img id="meowl-image" src="meowl.png" alt="Meowl">
+  <canvas id="background-meowls" aria-hidden="true"></canvas>
   <svg id="crack-lines" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true" hidden>
     <path id="crack-line-one-shadow" class="crack-shadow" pathLength="1" d="M 1000 468 L 928 501 L 854 452 L 779 482 L 708 433 L 629 478 L 554 444 L 481 503 L 402 459 L 326 512 L 249 469 L 175 526 L 102 482 L 0 534"></path>
     <path id="crack-line-one-highlight" class="crack-highlight" pathLength="1" d="M 1000 468 L 928 501 L 854 452 L 779 482 L 708 433 L 629 478 L 554 444 L 481 503 L 402 459 L 326 512 L 249 469 L 175 526 L 102 482 L 0 534"></path>
@@ -310,6 +320,8 @@
     const eventMenu = document.getElementById("event-menu");
     const floatingMeowls = document.getElementById("floating-meowls");
     const floatingContext = floatingMeowls.getContext("2d", { alpha: true });
+    const backgroundMeowls = document.getElementById("background-meowls");
+    const backgroundMeowlContext = backgroundMeowls.getContext("2d", { alpha: true });
     const floatingSprite = new Image();
     floatingSprite.src = "meowl3.png";
     const crackSprite = new Image();
@@ -331,6 +343,7 @@
       "we love meowls"
     ];
     const maxFloatingMeowls = 1000;
+    const backgroundMeowlCount = 1000;
     const discoCopiesPerCollision = 60;
     const discoBatchCooldown = 300;
     const adminFirstCollisionBaseTime = 4.10;
@@ -384,6 +397,11 @@
     let crackRebuildStartedAt = 0;
     let crackRebuildTimer;
     let crackRebuildStartTimer;
+    let crackRevealTimer;
+    let backgroundMeowlMotion = [];
+    let backgroundMeowlFrame;
+    let lastBackgroundMeowlFrame = 0;
+    let backgroundMeowlsEscaping = false;
 
     audio.addEventListener("playing", () => {
       if (mainMusicPlaying) return;
@@ -399,10 +417,99 @@
       floatingMeowls.width = Math.round(window.innerWidth * ratio);
       floatingMeowls.height = Math.round(window.innerHeight * ratio);
       floatingContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+      backgroundMeowls.width = Math.round(window.innerWidth * ratio);
+      backgroundMeowls.height = Math.round(window.innerHeight * ratio);
+      backgroundMeowlContext.setTransform(ratio, 0, 0, ratio, 0, 0);
     }
 
     resizeFloatingCanvas();
     window.addEventListener("resize", resizeFloatingCanvas);
+    startBackgroundMeowls();
+
+    function startBackgroundMeowls() {
+      backgroundMeowlMotion = [];
+      backgroundMeowlsEscaping = false;
+      for (let index = 0; index < backgroundMeowlCount; index += 1) {
+        const size = 24 + Math.random() * 38;
+        backgroundMeowlMotion.push({
+          x: Math.random() * Math.max(0, window.innerWidth - size),
+          y: Math.random() * Math.max(0, window.innerHeight - size * 850 / 770),
+          width: size,
+          height: size * 850 / 770,
+          vx: (Math.random() < 0.5 ? -1 : 1) * (1 + Math.random() * 2.5),
+          vy: (Math.random() < 0.5 ? -1 : 1) * (1 + Math.random() * 2.5)
+        });
+      }
+      lastBackgroundMeowlFrame = 0;
+      backgroundMeowlFrame = requestAnimationFrame(moveBackgroundMeowls);
+    }
+
+    function moveBackgroundMeowls(timestamp) {
+      if (timestamp - lastBackgroundMeowlFrame < 33) {
+        backgroundMeowlFrame = requestAnimationFrame(moveBackgroundMeowls);
+        return;
+      }
+      const frameScale = lastBackgroundMeowlFrame
+        ? Math.min((timestamp - lastBackgroundMeowlFrame) / 16.67, 3)
+        : 1;
+      lastBackgroundMeowlFrame = timestamp;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      backgroundMeowlContext.clearRect(0, 0, width, height);
+
+      for (let index = backgroundMeowlMotion.length - 1; index >= 0; index -= 1) {
+        const meowl = backgroundMeowlMotion[index];
+        if (backgroundMeowlsEscaping) {
+          meowl.x += meowl.escapeVx * frameScale;
+          meowl.y += meowl.escapeVy * frameScale;
+          if (meowl.x < -meowl.width || meowl.x > width
+              || meowl.y < -meowl.height || meowl.y > height) {
+            backgroundMeowlMotion.splice(index, 1);
+            continue;
+          }
+        } else {
+          meowl.x += meowl.vx * frameScale;
+          meowl.y += meowl.vy * frameScale;
+          const maxX = Math.max(0, width - meowl.width);
+          const maxY = Math.max(0, height - meowl.height);
+          if (meowl.x <= 0 || meowl.x >= maxX) {
+            meowl.x = Math.max(0, Math.min(meowl.x, maxX));
+            meowl.vx *= -1;
+          }
+          if (meowl.y <= 0 || meowl.y >= maxY) {
+            meowl.y = Math.max(0, Math.min(meowl.y, maxY));
+            meowl.vy *= -1;
+          }
+        }
+
+        if (floatingSprite.complete && floatingSprite.naturalWidth) {
+          backgroundMeowlContext.drawImage(floatingSprite, meowl.x, meowl.y, meowl.width, meowl.height);
+        }
+      }
+
+      if (backgroundMeowlMotion.length) {
+        backgroundMeowlFrame = requestAnimationFrame(moveBackgroundMeowls);
+      } else {
+        backgroundMeowlContext.clearRect(0, 0, width, height);
+      }
+    }
+
+    function sendBackgroundMeowlsAway() {
+      if (backgroundMeowlsEscaping) return;
+      image.src = "meowlking.png";
+      image.style.visibility = "";
+      backgroundMeowlsEscaping = true;
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      for (const meowl of backgroundMeowlMotion) {
+        const dx = meowl.x + meowl.width / 2 - centerX;
+        const dy = meowl.y + meowl.height / 2 - centerY;
+        const distance = Math.hypot(dx, dy) || 1;
+        const speed = 5 + Math.random() * 5;
+        meowl.escapeVx = dx / distance * speed;
+        meowl.escapeVy = dy / distance * speed;
+      }
+    }
 
     function countBannerClick() {
       bannerClickCount += 1;
@@ -496,6 +603,7 @@
       clearTimeout(crackTextTimer);
       clearTimeout(crackRebuildStartTimer);
       clearTimeout(crackRebuildTimer);
+      clearTimeout(crackRevealTimer);
       cancelAnimationFrame(crackShatterFrame);
       crackShards.hidden = true;
       rebuildWorkers.hidden = true;
@@ -550,6 +658,7 @@
         startCrackShatter();
         playCrackSound();
         clearTimeout(crackingIdleTimer);
+        crackRevealTimer = setTimeout(sendBackgroundMeowlsAway, 3000);
         crackTextTimer = setTimeout(() => {
           if (crackingOpenActive && crackingStage === 3) banner.innerText = "..";
         }, 1000);
@@ -649,6 +758,7 @@
     function finishCrackRebuild() {
       if (!crackingOpenActive || !crackRebuilding) return;
       clearTimeout(crackRebuildTimer);
+      clearTimeout(crackRevealTimer);
       cancelAnimationFrame(crackShatterFrame);
       crackRebuilding = false;
       crackShards.hidden = true;
