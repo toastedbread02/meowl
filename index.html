@@ -206,11 +206,11 @@
 
     .worker-ladder {
       position: absolute;
+      top: 0;
       bottom: 50px;
       left: 13px;
       z-index: 0;
       width: 28px;
-      height: min(34vh, 250px);
       background:
         linear-gradient(90deg, transparent 0 3px, #88521f 3px 6px, transparent 6px 22px, #88521f 22px 25px, transparent 25px),
         repeating-linear-gradient(to bottom, transparent 0 17px, #d39a55 17px 20px, transparent 20px 34px);
@@ -229,7 +229,7 @@
       z-index: 2;
       width: 52px;
       height: 58px;
-      animation: worker-climb 3.2s ease-in-out infinite;
+      will-change: transform;
     }
 
     .worker-climber img {
@@ -270,11 +270,6 @@
 
     @keyframes worker-bob {
       50% { transform: translateY(-3px); }
-    }
-
-    @keyframes worker-climb {
-      0%, 100% { transform: translateY(0); }
-      35%, 70% { transform: translateY(-145px); }
     }
 
     @keyframes crack-line-draw {
@@ -598,24 +593,44 @@
 
       crackRebuilding = true;
       crackRebuildStartedAt = performance.now();
-      for (let pieceIndex = 0; pieceIndex < crackPieces.length; pieceIndex += 1) {
-        const piece = crackPieces[pieceIndex];
-        piece.rebuildFromX = piece.dx;
-        piece.rebuildFromY = piece.dy;
-        piece.rebuildFromRotation = piece.rotation;
-        piece.workerIndex = pieceIndex % 5;
-        piece.rebuildDelay = Math.floor(pieceIndex / 5) * 4300 + Math.random() * 500;
-        piece.rebuildDuration = 7000 + Math.random() * 2500;
-      }
-
       const workerPositions = [8, 27, 47, 67, 87];
+      const workerQueues = workerPositions.map(() => []);
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      for (const piece of crackPieces) {
+        const workerIndex = workerPositions.reduce((closestIndex, position, index) => {
+          const distance = Math.abs(piece.centerX - width * position / 100);
+          const closestDistance = Math.abs(piece.centerX - width * workerPositions[closestIndex] / 100);
+          return distance < closestDistance ? index : closestIndex;
+        }, 0);
+        piece.workerIndex = workerIndex;
+        piece.rebuildFromX = piece.dx;
+        piece.rebuildFromY = height - piece.height / 2 - piece.centerY;
+        piece.rebuildFromRotation = piece.rotation;
+        piece.rebuildDuration = 1400;
+        workerQueues[workerIndex].push(piece);
+      }
+      workerQueues.forEach((queue) => {
+        queue.sort((a, b) => b.centerY - a.centerY);
+      });
+      const longestWorkerQueue = Math.max(...workerQueues.map((queue) => queue.length));
+      const workCycle = 59500 / longestWorkerQueue;
+      const climbDuration = workCycle / 2 - 10;
+      workerQueues.forEach((queue) => {
+        queue.forEach((piece, order) => {
+          piece.rebuildDelay = order * workCycle;
+          piece.rebuildDuration = climbDuration;
+          piece.dx = piece.rebuildFromX;
+          piece.dy = piece.rebuildFromY;
+          piece.rotation = piece.rebuildFromRotation;
+        });
+      });
+
       rebuildWorkers.replaceChildren();
       workerPositions.forEach((position, index) => {
         const worker = document.createElement("div");
         worker.className = "rebuild-worker";
         worker.style.left = `${position}%`;
-        worker.style.animationDuration = `${1.3 + Math.random() * 1.6}s`;
-        worker.style.animationDelay = `${index * 0.13}s`;
         const ladder = document.createElement("div");
         ladder.className = "worker-ladder";
         const climber = document.createElement("div");
@@ -820,45 +835,48 @@
         : 1;
       lastCrackFrame = timestamp;
       crackContext.clearRect(0, 0, width, height);
-      if (crackRebuilding) {
-        crackContext.save();
-        crackContext.lineCap = "round";
-        for (const piece of crackPieces) {
-          const pieceElapsed = rebuildingFor - piece.rebuildDelay;
-          if (pieceElapsed <= 0 || pieceElapsed >= piece.rebuildDuration) continue;
-          const worker = rebuildWorkers.children[piece.workerIndex];
-          const climber = worker?.querySelector(".worker-climber");
-          if (!climber) continue;
-          const workerRect = climber.getBoundingClientRect();
-          const startX = workerRect.left + workerRect.width / 2;
-          const startY = workerRect.top + workerRect.height * 0.45;
-          const endX = piece.centerX + piece.dx;
-          const endY = piece.centerY + piece.dy;
-          crackContext.strokeStyle = "#613b1c";
-          crackContext.lineWidth = 3;
-          crackContext.beginPath();
-          crackContext.moveTo(startX, startY);
-          crackContext.lineTo(endX, endY);
-          crackContext.stroke();
-          crackContext.strokeStyle = "#e7b66d";
-          crackContext.lineWidth = 1;
-          crackContext.stroke();
-        }
-        crackContext.restore();
-      }
       crackContext.strokeStyle = "rgba(0, 0, 0, 0.9)";
       crackContext.lineWidth = 1.5;
       let piecesRemain = false;
 
+      if (crackRebuilding) {
+        for (const worker of rebuildWorkers.children) {
+          worker.querySelector(".worker-climber").style.transform = "translateY(0px)";
+        }
+        for (const piece of crackPieces) {
+          const pieceElapsed = rebuildingFor - piece.rebuildDelay;
+          if (pieceElapsed < 0 || pieceElapsed >= piece.rebuildDuration * 2) continue;
+          const climber = rebuildWorkers.children[piece.workerIndex]?.querySelector(".worker-climber");
+          if (!climber) continue;
+          const targetWorkerY = piece.centerY - (height - 45);
+          if (pieceElapsed < piece.rebuildDuration) {
+            const progress = pieceElapsed / piece.rebuildDuration;
+            const eased = progress * progress * (3 - 2 * progress);
+            climber.style.transform = `translateY(${targetWorkerY * eased}px)`;
+          } else {
+            const progress = (pieceElapsed - piece.rebuildDuration) / piece.rebuildDuration;
+            const eased = progress * progress * (3 - 2 * progress);
+            climber.style.transform = `translateY(${targetWorkerY * (1 - eased)}px)`;
+          }
+        }
+      }
+
       for (const piece of crackPieces) {
         if (crackRebuilding) {
           const pieceElapsed = rebuildingFor - piece.rebuildDelay;
-          const progress = Math.max(0, Math.min(1, pieceElapsed / piece.rebuildDuration));
-          const eased = progress * progress * (3 - 2 * progress);
-          piece.dx = piece.rebuildFromX * (1 - eased);
-          piece.dy = piece.rebuildFromY * (1 - eased);
-          piece.rotation = piece.rebuildFromRotation * (1 - eased);
-          if (progress < 1) piecesRemain = true;
+          const climbProgress = Math.max(0, Math.min(1, pieceElapsed / piece.rebuildDuration));
+          const eased = climbProgress * climbProgress * (3 - 2 * climbProgress);
+          if (pieceElapsed < piece.rebuildDuration) {
+            piece.dx = piece.rebuildFromX * (1 - eased);
+            piece.dy = piece.rebuildFromY * (1 - eased);
+            piece.rotation = piece.rebuildFromRotation * (1 - eased);
+            piecesRemain = true;
+          } else {
+            piece.dx = 0;
+            piece.dy = 0;
+            piece.rotation = 0;
+          }
+          if (pieceElapsed < piece.rebuildDuration * 2) piecesRemain = true;
         } else {
           piece.dx += piece.vx * frameScale;
           piece.vy += 0.17 * frameScale;
@@ -904,6 +922,33 @@
         crackContext.strokeStyle = "rgba(255, 255, 255, 0.45)";
         crackContext.lineWidth = 0.6;
         crackContext.stroke();
+        crackContext.restore();
+      }
+
+      if (crackRebuilding) {
+        crackContext.save();
+        crackContext.lineCap = "round";
+        for (const piece of crackPieces) {
+          const pieceElapsed = rebuildingFor - piece.rebuildDelay;
+          if (pieceElapsed < 0 || pieceElapsed >= piece.rebuildDuration) continue;
+          const worker = rebuildWorkers.children[piece.workerIndex];
+          const climber = worker?.querySelector(".worker-climber");
+          if (!climber) continue;
+          const workerRect = climber.getBoundingClientRect();
+          const startX = workerRect.left + workerRect.width / 2;
+          const startY = workerRect.top + workerRect.height / 2;
+          const endX = piece.centerX + piece.dx;
+          const endY = piece.centerY + piece.dy;
+          crackContext.strokeStyle = "#613b1c";
+          crackContext.lineWidth = 3;
+          crackContext.beginPath();
+          crackContext.moveTo(startX, startY);
+          crackContext.lineTo(endX, endY);
+          crackContext.stroke();
+          crackContext.strokeStyle = "#e7b66d";
+          crackContext.lineWidth = 1;
+          crackContext.stroke();
+        }
         crackContext.restore();
       }
 
