@@ -152,6 +152,9 @@
       fill: none;
       stroke-linecap: round;
       stroke-linejoin: round;
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      animation: crack-line-draw 0.55s ease-out forwards;
     }
 
     #crack-lines .crack-shadow {
@@ -167,11 +170,17 @@
     #crack-line-two-shadow,
     #crack-line-two-highlight {
       opacity: 0;
+      animation: none;
     }
 
     #crack-lines.second-crack #crack-line-two-shadow,
     #crack-lines.second-crack #crack-line-two-highlight {
       opacity: 1;
+      animation: crack-line-draw 0.55s ease-out forwards;
+    }
+
+    @keyframes crack-line-draw {
+      to { stroke-dashoffset: 0; }
     }
 
     @keyframes meowl-walk-in {
@@ -201,10 +210,10 @@
   </section>
   <img id="meowl-image" src="meowl.png" alt="Meowl">
   <svg id="crack-lines" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true" hidden>
-    <path id="crack-line-one-shadow" class="crack-shadow" d="M 505 0 L 486 90 L 522 155 L 467 218 L 500 292 L 445 354 L 478 420 L 421 492 L 459 558 L 407 628 L 438 697 L 384 770 L 422 836 L 390 912 L 414 1000"></path>
-    <path id="crack-line-one-highlight" class="crack-highlight" d="M 505 0 L 486 90 L 522 155 L 467 218 L 500 292 L 445 354 L 478 420 L 421 492 L 459 558 L 407 628 L 438 697 L 384 770 L 422 836 L 390 912 L 414 1000"></path>
-    <path id="crack-line-two-shadow" class="crack-shadow" d="M 0 442 L 145 466 L 231 423 L 315 482 L 407 449 L 500 492 L 593 445 L 681 482 L 774 435 L 863 474 L 1000 439"></path>
-    <path id="crack-line-two-highlight" class="crack-highlight" d="M 0 442 L 145 466 L 231 423 L 315 482 L 407 449 L 500 492 L 593 445 L 681 482 L 774 435 L 863 474 L 1000 439"></path>
+    <path id="crack-line-one-shadow" class="crack-shadow" pathLength="1" d="M 1000 468 L 928 501 L 854 452 L 779 482 L 708 433 L 629 478 L 554 444 L 481 503 L 402 459 L 326 512 L 249 469 L 175 526 L 102 482 L 0 534"></path>
+    <path id="crack-line-one-highlight" class="crack-highlight" pathLength="1" d="M 1000 468 L 928 501 L 854 452 L 779 482 L 708 433 L 629 478 L 554 444 L 481 503 L 402 459 L 326 512 L 249 469 L 175 526 L 102 482 L 0 534"></path>
+    <path id="crack-line-two-shadow" class="crack-shadow" pathLength="1" d="M 508 0 L 479 83 L 525 156 L 462 230 L 505 307 L 448 379 L 486 450 L 424 524 L 468 598 L 407 675 L 451 748 L 392 821 L 432 900 L 382 1000"></path>
+    <path id="crack-line-two-highlight" class="crack-highlight" pathLength="1" d="M 508 0 L 479 83 L 525 156 L 462 230 L 505 307 L 448 379 L 486 450 L 424 524 L 468 598 L 407 675 L 451 748 L 392 821 L 432 900 L 382 1000"></path>
   </svg>
   <canvas id="crack-shards" aria-hidden="true" hidden></canvas>
   <img id="meowl-visitor" src="meowl3.png" alt="" aria-hidden="true" hidden>
@@ -478,8 +487,8 @@
       crackContext.setTransform(ratio, 0, 0, ratio, 0, 0);
       crackShards.hidden = false;
 
-      const columns = 10;
-      const rows = 8;
+      const columns = 8;
+      const rows = 6;
       const pieceWidth = width / columns;
       const pieceHeight = height / rows;
       const scale = Math.max(width / crackSprite.naturalWidth, height / crackSprite.naturalHeight);
@@ -487,25 +496,60 @@
       const sourceHeight = height / scale;
       const sourceX = (crackSprite.naturalWidth - sourceWidth) / 2;
       const sourceY = (crackSprite.naturalHeight - sourceHeight) / 2;
+      const vertices = [];
       crackPieces = [];
+
+      for (let row = 0; row <= rows; row += 1) {
+        const vertexRow = [];
+        for (let column = 0; column <= columns; column += 1) {
+          const edge = row === 0 || row === rows || column === 0 || column === columns;
+          const jitterX = edge ? 0 : (Math.random() - 0.5) * pieceWidth * 0.7;
+          const jitterY = edge ? 0 : (Math.random() - 0.5) * pieceHeight * 0.7;
+          vertexRow.push({
+            x: column * pieceWidth + jitterX,
+            y: row * pieceHeight + jitterY
+          });
+        }
+        vertices.push(vertexRow);
+      }
 
       for (let row = 0; row < rows; row += 1) {
         for (let column = 0; column < columns; column += 1) {
-          const x = column * pieceWidth;
-          const y = row * pieceHeight;
-          const w = Math.min(pieceWidth + 1, width - x);
-          const h = Math.min(pieceHeight + 1, height - y);
-          crackPieces.push({
-            x, y, w, h,
-            sx: sourceX + x / scale,
-            sy: sourceY + y / scale,
-            sw: w / scale,
-            sh: h / scale,
-            vx: (Math.random() - 0.5) * 2.4,
-            vy: 0.8 + Math.random() * 1.6,
-            rotation: 0,
-            rotationSpeed: (Math.random() - 0.5) * 0.055
-          });
+          const topLeft = vertices[row][column];
+          const topRight = vertices[row][column + 1];
+          const bottomRight = vertices[row + 1][column + 1];
+          const bottomLeft = vertices[row + 1][column];
+          const triangles = Math.random() < 0.5
+            ? [[topLeft, topRight, bottomRight], [topLeft, bottomRight, bottomLeft]]
+            : [[topLeft, topRight, bottomLeft], [topRight, bottomRight, bottomLeft]];
+
+          for (const points of triangles) {
+            const centerX = points.reduce((sum, point) => sum + point.x, 0) / points.length;
+            const centerY = points.reduce((sum, point) => sum + point.y, 0) / points.length;
+            const minX = Math.min(...points.map((point) => point.x));
+            const maxX = Math.max(...points.map((point) => point.x));
+            const minY = Math.min(...points.map((point) => point.y));
+            const maxY = Math.max(...points.map((point) => point.y));
+            crackPieces.push({
+              points,
+              centerX,
+              centerY,
+              minX,
+              minY,
+              width: maxX - minX,
+              height: maxY - minY,
+              sx: sourceX + minX / scale,
+              sy: sourceY + minY / scale,
+              sw: (maxX - minX) / scale,
+              sh: (maxY - minY) / scale,
+              dx: 0,
+              dy: 0,
+              vx: (Math.random() - 0.5) * 3,
+              vy: 0.5 + Math.random() * 1.8,
+              rotation: 0,
+              rotationSpeed: (Math.random() - 0.5) * 0.07
+            });
+          }
         }
       }
 
@@ -521,29 +565,36 @@
         : 1;
       lastCrackFrame = timestamp;
       crackContext.clearRect(0, 0, width, height);
-      crackContext.strokeStyle = "rgba(0, 0, 0, 0.8)";
-      crackContext.lineWidth = 2;
+      crackContext.strokeStyle = "rgba(0, 0, 0, 0.9)";
+      crackContext.lineWidth = 1.5;
       let piecesRemain = false;
 
       for (const piece of crackPieces) {
-        piece.x += piece.vx * frameScale;
-        piece.vy += 0.16 * frameScale;
-        piece.y += piece.vy * frameScale;
+        piece.dx += piece.vx * frameScale;
+        piece.vy += 0.17 * frameScale;
+        piece.dy += piece.vy * frameScale;
         piece.rotation += piece.rotationSpeed * frameScale;
-        if (piece.y < height + piece.h) piecesRemain = true;
+        if (piece.centerY + piece.dy < height + piece.height) piecesRemain = true;
 
         crackContext.save();
-        crackContext.translate(piece.x + piece.w / 2, piece.y + piece.h / 2);
+        crackContext.translate(piece.centerX + piece.dx, piece.centerY + piece.dy);
         crackContext.rotate(piece.rotation);
         crackContext.beginPath();
-        crackContext.rect(-piece.w / 2, -piece.h / 2, piece.w, piece.h);
+        piece.points.forEach((point, index) => {
+          const x = point.x - piece.centerX;
+          const y = point.y - piece.centerY;
+          if (index === 0) crackContext.moveTo(x, y);
+          else crackContext.lineTo(x, y);
+        });
+        crackContext.closePath();
         crackContext.clip();
         crackContext.drawImage(
           crackSprite,
           piece.sx, piece.sy, piece.sw, piece.sh,
-          -piece.w / 2, -piece.h / 2, piece.w, piece.h
+          piece.minX - piece.centerX, piece.minY - piece.centerY,
+          piece.width, piece.height
         );
-        crackContext.strokeRect(-piece.w / 2, -piece.h / 2, piece.w, piece.h);
+        crackContext.stroke();
         crackContext.restore();
       }
 
