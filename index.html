@@ -137,7 +137,7 @@
     #crack-shards {
       position: fixed;
       inset: 0;
-      z-index: 2;
+      z-index: 4;
       width: 100%;
       height: 100%;
       pointer-events: none;
@@ -204,7 +204,35 @@
       animation: worker-search 1.8s ease-in-out infinite alternate;
     }
 
-    .rebuild-worker img {
+    .worker-ladder {
+      position: absolute;
+      bottom: 50px;
+      left: 13px;
+      z-index: 0;
+      width: 28px;
+      height: min(34vh, 250px);
+      background:
+        linear-gradient(90deg, transparent 0 3px, #88521f 3px 6px, transparent 6px 22px, #88521f 22px 25px, transparent 25px),
+        repeating-linear-gradient(to bottom, transparent 0 17px, #d39a55 17px 20px, transparent 20px 34px);
+      filter: drop-shadow(1px 1px 1px #241408);
+    }
+
+    .worker-ladder,
+    .worker-climber {
+      pointer-events: none;
+    }
+
+    .worker-climber {
+      position: absolute;
+      bottom: 8px;
+      left: 0;
+      z-index: 2;
+      width: 52px;
+      height: 58px;
+      animation: worker-climb 3.2s ease-in-out infinite;
+    }
+
+    .worker-climber img {
       position: absolute;
       bottom: 0;
       left: 3px;
@@ -215,9 +243,9 @@
 
     .worker-hat {
       position: absolute;
-      top: 5px;
-      left: 14px;
-      z-index: 1;
+      top: 0;
+      left: 0;
+      z-index: 3;
       width: 23px;
       height: 11px;
       border-radius: 10px 10px 2px 2px;
@@ -242,6 +270,11 @@
 
     @keyframes worker-bob {
       50% { transform: translateY(-3px); }
+    }
+
+    @keyframes worker-climb {
+      0%, 100% { transform: translateY(0); }
+      35%, 70% { transform: translateY(-145px); }
     }
 
     @keyframes crack-line-draw {
@@ -376,6 +409,8 @@
     let crackShatterFrame;
     let lastCrackFrame = 0;
     let crackPieces = [];
+    let crackTexture;
+    let crackTextureRatio = 1;
     let crackRebuilding = false;
     let crackRebuildStartedAt = 0;
     let crackRebuildTimer;
@@ -497,6 +532,7 @@
       rebuildWorkers.hidden = true;
       rebuildWorkers.replaceChildren();
       crackContext.clearRect(0, 0, crackShards.width, crackShards.height);
+      crackTexture = null;
       crackLines.hidden = true;
       crackLines.classList.remove("first-crack");
       crackLines.classList.remove("second-crack");
@@ -539,7 +575,6 @@
         playCrackSound();
       } else {
         banner.innerText = "WHAT HAVE YOU DONE";
-        crackLines.hidden = true;
         document.body.classList.add("cracking-open");
         image.style.visibility = "hidden";
         startCrackShatter();
@@ -563,12 +598,14 @@
 
       crackRebuilding = true;
       crackRebuildStartedAt = performance.now();
-      for (const piece of crackPieces) {
+      for (let pieceIndex = 0; pieceIndex < crackPieces.length; pieceIndex += 1) {
+        const piece = crackPieces[pieceIndex];
         piece.rebuildFromX = piece.dx;
         piece.rebuildFromY = piece.dy;
         piece.rebuildFromRotation = piece.rotation;
-        piece.rebuildDelay = Math.random() * 41000;
-        piece.rebuildDuration = 10000 + Math.random() * 8000;
+        piece.workerIndex = pieceIndex % 5;
+        piece.rebuildDelay = Math.floor(pieceIndex / 5) * 4300 + Math.random() * 500;
+        piece.rebuildDuration = 7000 + Math.random() * 2500;
       }
 
       const workerPositions = [8, 27, 47, 67, 87];
@@ -579,13 +616,25 @@
         worker.style.left = `${position}%`;
         worker.style.animationDuration = `${1.3 + Math.random() * 1.6}s`;
         worker.style.animationDelay = `${index * 0.13}s`;
+        const ladder = document.createElement("div");
+        ladder.className = "worker-ladder";
+        const climber = document.createElement("div");
+        climber.className = "worker-climber";
         const imageElement = document.createElement("img");
         imageElement.src = "meowl3.png";
         imageElement.alt = "";
         const hat = document.createElement("span");
         hat.className = "worker-hat";
-        worker.append(imageElement, hat);
+        climber.append(imageElement, hat);
+        worker.append(ladder, climber);
         rebuildWorkers.append(worker);
+        const positionHat = () => {
+          // Position the hat from the image's rendered top edge so it sits above the cat.
+          hat.style.top = `${imageElement.offsetTop - hat.offsetHeight + 1}px`;
+          hat.style.left = `${imageElement.offsetLeft + imageElement.offsetWidth / 2 - hat.offsetWidth / 2}px`;
+        };
+        imageElement.addEventListener("load", positionHat, { once: true });
+        if (imageElement.complete) positionHat();
       });
       rebuildWorkers.hidden = false;
       crackShards.hidden = false;
@@ -601,6 +650,7 @@
       crackRebuilding = false;
       crackShards.hidden = true;
       crackContext.clearRect(0, 0, crackShards.width, crackShards.height);
+      crackTexture = null;
       rebuildWorkers.hidden = true;
       rebuildWorkers.replaceChildren();
       document.body.classList.remove("cracking-open");
@@ -616,7 +666,7 @@
     function startCrackShatter() {
       if (!crackSprite.complete || !crackSprite.naturalWidth) {
         crackSprite.addEventListener("load", () => {
-          if (crackingOpenActive && crackingStage === 3) startCrackShatter();
+          if (crackingOpenActive && crackingStage === 3 && !crackRebuilding) startCrackShatter();
         }, { once: true });
         return;
       }
@@ -628,6 +678,37 @@
       crackShards.height = Math.round(height * ratio);
       crackContext.setTransform(ratio, 0, 0, ratio, 0, 0);
       crackShards.hidden = false;
+      crackTexture = document.createElement("canvas");
+      crackTexture.width = crackShards.width;
+      crackTexture.height = crackShards.height;
+      crackTextureRatio = ratio;
+      const textureContext = crackTexture.getContext("2d");
+      textureContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+      textureContext.lineCap = "round";
+      textureContext.lineJoin = "round";
+      const crackStrokes = [
+        ["crack-line-one-shadow", "#080808", 22],
+        ["crack-line-two-shadow", "#080808", 22],
+        ["crack-line-one-highlight", "#fff", 6],
+        ["crack-line-two-highlight", "#fff", 6]
+      ];
+      for (const [pathId, color, lineWidth] of crackStrokes) {
+        const path = document.getElementById(pathId);
+        const pathLength = path.getTotalLength();
+        const steps = Math.ceil(pathLength / 8);
+        textureContext.beginPath();
+        for (let step = 0; step <= steps; step += 1) {
+          const point = path.getPointAtLength(pathLength * step / steps);
+          const x = point.x * width / 1000;
+          const y = point.y * height / 1000;
+          if (step === 0) textureContext.moveTo(x, y);
+          else textureContext.lineTo(x, y);
+        }
+        textureContext.strokeStyle = color;
+        textureContext.lineWidth = lineWidth;
+        textureContext.stroke();
+      }
+      crackLines.hidden = true;
 
       const columns = 8;
       const rows = 6;
@@ -739,6 +820,32 @@
         : 1;
       lastCrackFrame = timestamp;
       crackContext.clearRect(0, 0, width, height);
+      if (crackRebuilding) {
+        crackContext.save();
+        crackContext.lineCap = "round";
+        for (const piece of crackPieces) {
+          const pieceElapsed = rebuildingFor - piece.rebuildDelay;
+          if (pieceElapsed <= 0 || pieceElapsed >= piece.rebuildDuration) continue;
+          const worker = rebuildWorkers.children[piece.workerIndex];
+          const climber = worker?.querySelector(".worker-climber");
+          if (!climber) continue;
+          const workerRect = climber.getBoundingClientRect();
+          const startX = workerRect.left + workerRect.width / 2;
+          const startY = workerRect.top + workerRect.height * 0.45;
+          const endX = piece.centerX + piece.dx;
+          const endY = piece.centerY + piece.dy;
+          crackContext.strokeStyle = "#613b1c";
+          crackContext.lineWidth = 3;
+          crackContext.beginPath();
+          crackContext.moveTo(startX, startY);
+          crackContext.lineTo(endX, endY);
+          crackContext.stroke();
+          crackContext.strokeStyle = "#e7b66d";
+          crackContext.lineWidth = 1;
+          crackContext.stroke();
+        }
+        crackContext.restore();
+      }
       crackContext.strokeStyle = "rgba(0, 0, 0, 0.9)";
       crackContext.lineWidth = 1.5;
       let piecesRemain = false;
@@ -778,6 +885,19 @@
           piece.minX - piece.centerX, piece.minY - piece.centerY,
           piece.width, piece.height
         );
+        if (crackTexture && !crackRebuilding) {
+          crackContext.drawImage(
+            crackTexture,
+            piece.minX * crackTextureRatio,
+            piece.minY * crackTextureRatio,
+            piece.width * crackTextureRatio,
+            piece.height * crackTextureRatio,
+            piece.minX - piece.centerX,
+            piece.minY - piece.centerY,
+            piece.width,
+            piece.height
+          );
+        }
         crackContext.strokeStyle = "rgba(0, 0, 0, 0.9)";
         crackContext.lineWidth = 1.5;
         crackContext.stroke();
