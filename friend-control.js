@@ -1,315 +1,208 @@
 (() => {
   "use strict";
 
-  const openButton = document.getElementById("meowl-friends-open");
-  const backdrop = document.getElementById("meowl-friends-backdrop");
-  const panel = document.getElementById("meowl-friends-panel");
-  const closeButton = document.getElementById("meowl-friends-close");
-  const createButton = document.getElementById("meowl-friends-create");
-  const joinButton = document.getElementById("meowl-friends-join");
-  const connectButton = document.getElementById("meowl-friends-connect");
-  const stopButton = document.getElementById("meowl-friends-stop");
-  const copyButton = document.getElementById("meowl-friends-copy");
-  const codeInput = document.getElementById("meowl-friends-code");
-  const shareBox = document.getElementById("meowl-friends-share");
-  const status = document.getElementById("meowl-friends-status");
-  const remoteCursor = document.getElementById("meowl-remote-cursor");
-  const remoteCursorName = document.getElementById("meowl-remote-cursor-name");
-  const friendView = document.getElementById("meowl-friend-view");
   const PROFILE_KEY = "meowlDailyProfile";
-  const colors = ["#22c55e", "#f97316", "#eab308", "#3b82f6", "#a855f7", "#ec4899", "#14b8a6", "#ef4444", "#84cc16", "#fb7185", "#facc15", "#06b6d4", "#8b5cf6", "#d946ef", "#2dd4bf", "#f43f5e", "#65a30d", "#ea580c", "#c026d3", "#0ea5e9", "#a3e635", "#fda4af", "#0891b2", "#c084fc", "#e11d48", "#16a34a"];
-  const allowedKeys = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "a", "A", "d", "D", "w", "W", "s", "S", "Escape", " "]);
-  let peer = null;
-  let channel = null;
-  let hostMode = false;
-  let remotePointerDown = false;
-  let remoteName = "Friend";
-  let remoteColor = colors[0];
-  let lastMoveSentAt = 0;
-  let remoteMessages = [];
-  let screenStream = null;
+  const PROGRESS_KEY = "meowlDailyProgress";
+  const FRIENDS_KEY = "meowlFriends";
+  const XP_PER_LEVEL = 250;
+  const panel = document.getElementById("meowl-friends-panel");
+  const openButton = document.getElementById("meowl-friends-open");
+  const closeButton = document.getElementById("meowl-friends-close");
+  const backdrop = document.getElementById("meowl-friends-backdrop");
+  const nameInput = document.getElementById("meowl-friends-name");
+  const codeInput = document.getElementById("meowl-friends-code");
+  const addButton = document.getElementById("meowl-friends-add");
+  const list = document.getElementById("meowl-friends-list");
+  const status = document.getElementById("meowl-friends-status");
+  const shareButton = document.getElementById("daily-profile-share-code");
+  const profileStatus = document.getElementById("daily-profile-save-status");
+  const achievementNames = {
+    "first-win": "First Paw Forward",
+    "five-wins": "Meowl Regular",
+    "ten-wins": "Meowl Legend",
+    "three-streak": "Three Day Streak",
+    "seven-streak": "Weekly Whiskers",
+    "memory-cat": "Memory Cat",
+    "chaos-survivor": "Chaos Survivor"
+  };
 
-  function profile() {
+  function readStorage(key, fallback) {
     try {
-      const data = JSON.parse(localStorage.getItem(PROFILE_KEY) || "{}");
-      return { name: typeof data.name === "string" && data.name.trim() ? data.name.trim() : "Meowl player" };
+      const value = JSON.parse(localStorage.getItem(key) || "null");
+      return value && typeof value === "object" ? value : fallback;
     } catch {
-      return { name: "Meowl player" };
+      return fallback;
     }
   }
 
-  function colorForName(name) {
-    const counts = new Map();
-    let winner = "a";
-    let highest = 0;
-    for (const char of name.toLowerCase()) {
-      if (!/[a-z]/.test(char)) continue;
-      const count = (counts.get(char) || 0) + 1;
-      counts.set(char, count);
-      if (count > highest) {
-        winner = char;
-        highest = count;
-      }
+  function readFriends() {
+    const data = readStorage(FRIENDS_KEY, []);
+    return Array.isArray(data) ? data.filter((friend) => friend && typeof friend.name === "string") : [];
+  }
+
+  function saveFriends(friends) {
+    try {
+      localStorage.setItem(FRIENDS_KEY, JSON.stringify(friends));
+      return true;
+    } catch {
+      return false;
     }
-    return colors[winner.charCodeAt(0) - 97];
+  }
+
+  function profileCode() {
+    const profile = readStorage(PROFILE_KEY, {});
+    const progress = readStorage(PROGRESS_KEY, {});
+    const xp = Number.isFinite(progress.xp) ? Math.max(0, progress.xp) : 0;
+    const earned = Array.isArray(progress.achievements) ? progress.achievements.slice(0, 50) : [];
+    const data = {
+      version: 1,
+      name: typeof profile.name === "string" ? profile.name.trim().slice(0, 24) : "",
+      points: Number.isFinite(progress.points) ? Math.max(0, progress.points) : 0,
+      xp,
+      level: Math.floor(xp / XP_PER_LEVEL) + 1,
+      xpToNext: xp % XP_PER_LEVEL,
+      streak: Number.isFinite(progress.streak) ? Math.max(0, progress.streak) : 0,
+      totalCompletions: Number.isFinite(progress.totalCompletions) ? Math.max(0, progress.totalCompletions) : 0,
+      achievements: earned
+    };
+    const bytes = new TextEncoder().encode(JSON.stringify(data));
+    let binary = "";
+    bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  }
+
+  function parseCode(code) {
+    if (typeof code !== "string" || code.length > 5000) return null;
+    try {
+      const base64 = code.trim().replace(/-/g, "+").replace(/_/g, "/");
+      const binary = atob(base64 + "=".repeat((4 - base64.length % 4) % 4));
+      const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+      const data = JSON.parse(new TextDecoder().decode(bytes));
+      if (data.version !== 1 || typeof data.name !== "string" || !data.name.trim()) return null;
+      const xp = Number.isFinite(data.xp) ? Math.max(0, data.xp) : 0;
+      return {
+        name: data.name.trim().slice(0, 24),
+        level: Number.isFinite(data.level) ? Math.max(1, Math.floor(data.level)) : Math.floor(xp / XP_PER_LEVEL) + 1,
+        xp: Math.floor(xp),
+        xpToNext: Number.isFinite(data.xpToNext) ? Math.max(0, Math.floor(data.xpToNext)) : Math.floor(xp % XP_PER_LEVEL),
+        points: Number.isFinite(data.points) ? Math.max(0, Math.floor(data.points)) : 0,
+        streak: Number.isFinite(data.streak) ? Math.max(0, Math.floor(data.streak)) : 0,
+        totalCompletions: Number.isFinite(data.totalCompletions) ? Math.max(0, Math.floor(data.totalCompletions)) : 0,
+        achievements: Array.isArray(data.achievements) ? data.achievements.filter((item) => typeof item === "string").slice(0, 50) : []
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  function renderFriends() {
+    list.replaceChildren();
+    const friends = readFriends();
+    if (!friends.length) {
+      const empty = document.createElement("li");
+      empty.textContent = "No friends added yet.";
+      list.append(empty);
+      return;
+    }
+    for (const friend of friends) {
+      const item = document.createElement("li");
+      item.className = "meowl-friend-card";
+      const heading = document.createElement("h3");
+      heading.textContent = friend.name;
+      item.append(heading);
+      const details = [
+        `Level ${friend.level} · ${friend.xpToNext}/250 XP`,
+        `${friend.points} points · ${friend.streak} day streak`,
+        `${friend.totalCompletions} challenges completed`,
+        `${friend.achievements.length} achievements`
+      ];
+      for (const text of details) {
+        const line = document.createElement("p");
+        line.textContent = text;
+        item.append(line);
+      }
+      if (friend.achievements.length) {
+        const achievements = document.createElement("p");
+        achievements.textContent = `Achievements: ${friend.achievements.map((id) => achievementNames[id] || id).join(", ")}`;
+        item.append(achievements);
+      }
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.textContent = "Remove";
+      remove.addEventListener("click", () => {
+        saveFriends(readFriends().filter((entry) => entry.name.toLowerCase() !== friend.name.toLowerCase()));
+        renderFriends();
+      });
+      item.append(remove);
+      list.append(item);
+    }
+  }
+
+  function addFriend() {
+    const name = nameInput.value.trim().slice(0, 24);
+    const friend = parseCode(codeInput.value);
+    if (!name) {
+      status.textContent = "Enter your friend's username.";
+      nameInput.focus();
+      return;
+    }
+    if (!friend) {
+      status.textContent = "That profile code is invalid. Ask your friend to copy a new one.";
+      return;
+    }
+    if (friend.name.toLowerCase() !== name.toLowerCase()) {
+      status.textContent = `That code belongs to ${friend.name}. Check the username.`;
+      return;
+    }
+    const friends = readFriends();
+    const index = friends.findIndex((entry) => entry.name.toLowerCase() === name.toLowerCase());
+    if (index >= 0) friends[index] = friend;
+    else friends.push(friend);
+    if (!saveFriends(friends)) {
+      status.textContent = "Couldn't save your friends on this device.";
+      return;
+    }
+    nameInput.value = "";
+    codeInput.value = "";
+    status.textContent = `${friend.name} added. Profile stats update when they share a new code.`;
+    renderFriends();
+  }
+
+  async function copyProfileCode() {
+    const code = profileCode();
+    try {
+      await navigator.clipboard.writeText(code);
+      profileStatus.textContent = "Friend profile code copied. Send it to your friend.";
+    } catch {
+      showPanel();
+      codeInput.value = code;
+      codeInput.focus();
+      codeInput.select();
+      status.textContent = "Copy the selected profile code and send it to your friend.";
+    }
   }
 
   function showPanel() {
-    backdrop.hidden = false;
+    renderFriends();
     panel.hidden = false;
+    backdrop.hidden = false;
     closeButton.focus();
   }
 
   function hidePanel() {
-    backdrop.hidden = true;
     panel.hidden = true;
+    backdrop.hidden = true;
     openButton.focus();
-  }
-
-  function setStatus(message) {
-    status.textContent = message;
-  }
-
-  function waitForIce(peerConnection) {
-    if (peerConnection.iceGatheringState === "complete") return Promise.resolve();
-    return new Promise((resolve) => {
-      let done = false;
-      const finish = () => {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-        peerConnection.removeEventListener("icegatheringstatechange", check);
-        resolve();
-      };
-      const check = () => {
-        if (peerConnection.iceGatheringState === "complete") finish();
-      };
-      const timer = setTimeout(finish, 15000);
-      peerConnection.addEventListener("icegatheringstatechange", check);
-    });
-  }
-
-  function createPeer() {
-    if (!window.RTCPeerConnection) throw new Error("This browser does not support direct connections.");
-    peer = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-    peer.addEventListener("connectionstatechange", () => {
-      if (!peer) return;
-      if (peer.connectionState === "failed") setStatus("Connection failed. Try a new code.");
-      if (peer.connectionState === "disconnected") setStatus("Friend disconnected.");
-    });
-    return peer;
-  }
-
-  function setupChannel(dataChannel) {
-    channel = dataChannel;
-    channel.addEventListener("open", () => {
-      const mine = profile();
-      send({ type: "hello", name: mine.name, color: colorForName(mine.name) });
-      setStatus(hostMode ? "Connected. Your friend can control this page." : "Connected to your friend.");
-    });
-    channel.addEventListener("close", () => setStatus("Friend disconnected."));
-    channel.addEventListener("message", (event) => receive(event.data));
-  }
-
-  async function createInvite() {
-    disconnect(false);
-    hostMode = true;
-    try {
-      if (!navigator.mediaDevices?.getDisplayMedia) throw new Error("Tab sharing is not available in this browser.");
-      screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
-      const connection = createPeer();
-      for (const track of screenStream.getTracks()) {
-        connection.addTrack(track, screenStream);
-        track.addEventListener("ended", () => {
-          setStatus("Screen sharing stopped.");
-          disconnect();
-        }, { once: true });
-      }
-      setupChannel(connection.createDataChannel("meowl-control", { ordered: true }));
-      const offer = await connection.createOffer();
-      await connection.setLocalDescription(offer);
-      setStatus("Making invite code...");
-      await waitForIce(connection);
-      shareBox.value = JSON.stringify(connection.localDescription);
-      setStatus("Send this code to your friend. Paste their reply above.");
-    } catch (error) {
-      setStatus(error.message || "Couldn't make a connection code.");
-      disconnect(false);
-    }
-  }
-
-  async function joinFriend() {
-    disconnect(false);
-    hostMode = false;
-    try {
-      const offer = JSON.parse(codeInput.value);
-      if (offer.type !== "offer" || codeInput.value.length > 50000) throw new Error("That invite code doesn't look right.");
-      const connection = createPeer();
-      connection.addEventListener("datachannel", (event) => setupChannel(event.channel));
-      connection.addEventListener("track", (event) => {
-        const stream = event.streams[0];
-        if (!stream) return;
-        friendView.srcObject = stream;
-        friendView.hidden = false;
-        const playback = friendView.play();
-        if (playback?.catch) playback.catch(() => {});
-      });
-      await connection.setRemoteDescription(offer);
-      const answer = await connection.createAnswer();
-      await connection.setLocalDescription(answer);
-      setStatus("Making reply code...");
-      await waitForIce(connection);
-      shareBox.value = JSON.stringify(connection.localDescription);
-      setStatus("Send this reply back to your friend.");
-    } catch (error) {
-      setStatus(error.message || "Couldn't join. Check the invite code.");
-      disconnect(false);
-    }
-  }
-
-  async function connectAnswer() {
-    try {
-      if (!hostMode || !peer) throw new Error("Create an invite first.");
-      const answer = JSON.parse(codeInput.value);
-      if (answer.type !== "answer" || codeInput.value.length > 50000) throw new Error("Paste the reply code from your friend.");
-      await peer.setRemoteDescription(answer);
-      setStatus("Connecting...");
-    } catch (error) {
-      setStatus(error.message || "Couldn't connect. Check the reply code.");
-    }
-  }
-
-  function send(message) {
-    if (channel?.readyState !== "open") return;
-    try { channel.send(JSON.stringify(message)); } catch { /* A disconnect can race with input. */ }
-  }
-
-  function receive(raw) {
-    if (typeof raw !== "string" || raw.length > 1000) return;
-    let message;
-    try { message = JSON.parse(raw); } catch { return; }
-    if (message.type === "hello") {
-      remoteName = typeof message.name === "string" ? message.name.slice(0, 24) : "Friend";
-      remoteColor = /^#[0-9a-f]{6}$/i.test(message.color) ? message.color : colorForName(remoteName);
-      remoteCursorName.textContent = remoteName;
-      remoteCursor.style.setProperty("--remote-color", remoteColor);
-      return;
-    }
-    if (!hostMode) return;
-    const now = performance.now();
-    remoteMessages = remoteMessages.filter((time) => now - time < 1000);
-    if (remoteMessages.length >= 90) return;
-    remoteMessages.push(now);
-    if (["move", "down", "up", "click"].includes(message.type)) applyPointer(message);
-    if (message.type === "key" && allowedKeys.has(message.key)) applyKey(message.key);
-  }
-
-  function applyPointer(message) {
-    if (!Number.isFinite(message.x) || !Number.isFinite(message.y)) return;
-    const x = Math.max(0, Math.min(1, message.x)) * window.innerWidth;
-    const y = Math.max(0, Math.min(1, message.y)) * window.innerHeight;
-    remoteCursor.style.left = `${x}px`;
-    remoteCursor.style.top = `${y}px`;
-    remoteCursor.classList.add("visible");
-    const target = document.elementFromPoint(x, y);
-    if (!target || target.closest("#meowl-friends-panel")) return;
-    const pointerTypes = { move: "pointermove", down: "pointerdown", up: "pointerup" };
-    if (pointerTypes[message.type] && window.PointerEvent) {
-      if (message.type === "down") remotePointerDown = true;
-      if (message.type === "up") remotePointerDown = false;
-      target.dispatchEvent(new PointerEvent(pointerTypes[message.type], {
-        bubbles: true, cancelable: true, pointerId: 7, pointerType: "mouse",
-        clientX: x, clientY: y, buttons: remotePointerDown ? 1 : 0
-      }));
-    }
-    const clickTarget = target.closest("button, a, [role='button']") || target;
-    if (message.type === "click") clickTarget.dispatchEvent(new MouseEvent("click", {
-      bubbles: true, cancelable: true, button: 0, clientX: x, clientY: y
-    }));
-  }
-
-  function applyKey(key) {
-    const active = document.activeElement;
-    if (active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) return;
-    document.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
-  }
-
-  function disconnect(updateStatus = true) {
-    if (channel) channel.close();
-    if (peer) peer.close();
-    channel = null;
-    peer = null;
-    if (screenStream) screenStream.getTracks().forEach((track) => track.stop());
-    screenStream = null;
-    if (friendView.srcObject) friendView.srcObject.getTracks().forEach((track) => track.stop());
-    friendView.srcObject = null;
-    friendView.hidden = true;
-    hostMode = false;
-    remotePointerDown = false;
-    remoteCursor.classList.remove("visible");
-    shareBox.value = "";
-    if (updateStatus) setStatus("Disconnected.");
-  }
-
-  function sendPointer(type, event) {
-    if (hostMode || channel?.readyState !== "open"
-        || event.target.closest("#meowl-friends-panel, #meowl-friends-open")) return;
-    if (type === "move") {
-      const now = performance.now();
-      if (now - lastMoveSentAt < 35) return;
-      lastMoveSentAt = now;
-    }
-    send({
-      type,
-      x: Math.max(0, Math.min(1, event.clientX / Math.max(1, window.innerWidth))),
-      y: Math.max(0, Math.min(1, event.clientY / Math.max(1, window.innerHeight)))
-    });
   }
 
   openButton.addEventListener("click", showPanel);
   closeButton.addEventListener("click", hidePanel);
   backdrop.addEventListener("click", hidePanel);
-  createButton.addEventListener("click", createInvite);
-  joinButton.addEventListener("click", joinFriend);
-  connectButton.addEventListener("click", connectAnswer);
-  stopButton.addEventListener("click", () => disconnect());
-  copyButton.addEventListener("click", async () => {
-    if (!shareBox.value) return;
-    try {
-      await navigator.clipboard.writeText(shareBox.value);
-      setStatus("Code copied.");
-    } catch {
-      shareBox.focus();
-      shareBox.select();
-      setStatus("Select and copy the code.");
-    }
-  });
-  function relayPointer(type, event) {
-    if (hostMode || channel?.readyState !== "open"
-        || event.target.closest("#meowl-friends-panel, #meowl-friends-open")) return;
-    sendPointer(type, event);
-    if (type !== "move") event.preventDefault();
-    event.stopImmediatePropagation();
-  }
-  document.addEventListener("pointermove", (event) => relayPointer("move", event), { capture: true, passive: true });
-  document.addEventListener("pointerdown", (event) => relayPointer("down", event), true);
-  document.addEventListener("pointerup", (event) => relayPointer("up", event), true);
-  document.addEventListener("click", (event) => relayPointer("click", event), true);
-  document.addEventListener("keydown", (event) => {
-    if (hostMode || !allowedKeys.has(event.key) || event.target.closest?.("#meowl-friends-panel")) return;
-    send({ type: "key", key: event.key });
-    event.preventDefault();
-    event.stopImmediatePropagation();
-  }, true);
+  addButton.addEventListener("click", addFriend);
+  shareButton.addEventListener("click", copyProfileCode);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !panel.hidden) hidePanel();
   });
-  window.addEventListener("beforeunload", () => disconnect(false));
-  window.addEventListener("meowl-profile-updated", () => {
-    const mine = profile();
-    if (channel?.readyState === "open") send({ type: "hello", name: mine.name, color: colorForName(mine.name) });
-  });
 
-  const mine = profile();
-  remoteName = mine.name;
+  renderFriends();
 })();
