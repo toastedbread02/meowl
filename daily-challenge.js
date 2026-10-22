@@ -2,6 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "meowlDailyProgress";
+  const PROFILE_KEY = "meowlDailyProfile";
   const REWARD_POINTS = 100;
   const launcher = document.getElementById("daily-challenge-launch");
   const backdrop = document.getElementById("daily-challenge-backdrop");
@@ -13,14 +14,26 @@
   const nameLabel = document.getElementById("daily-challenge-name");
   const instructionsLabel = document.getElementById("daily-challenge-instructions");
   const rewardLabel = document.getElementById("daily-challenge-reward");
-  const pointsLabel = document.getElementById("daily-challenge-points");
-  const streakLabel = document.getElementById("daily-challenge-streak");
   const bestLabel = document.getElementById("daily-challenge-best");
   const statusLabel = document.getElementById("daily-challenge-status");
-  const levelLabel = document.getElementById("daily-challenge-level");
-  const xpLabel = document.getElementById("daily-challenge-xp");
-  const xpProgress = document.getElementById("daily-challenge-xp-progress");
-  const achievementList = document.getElementById("daily-challenge-achievement-list");
+  const profileOpenButton = document.getElementById("daily-profile-open");
+  const profileBackdrop = document.getElementById("daily-profile-backdrop");
+  const profilePanel = document.getElementById("daily-profile-panel");
+  const profileCloseButton = document.getElementById("daily-profile-close");
+  const profileNameInput = document.getElementById("daily-profile-name-input");
+  const profilePictureInput = document.getElementById("daily-profile-picture-input");
+  const profileAvatarPreview = document.getElementById("daily-profile-avatar-preview");
+  const profileSmallAvatar = document.getElementById("daily-profile-small-avatar");
+  const profileSummaryName = document.getElementById("daily-profile-summary-name");
+  const profileSaveButton = document.getElementById("daily-profile-save");
+  const profileSaveStatus = document.getElementById("daily-profile-save-status");
+  const profilePoints = document.getElementById("daily-profile-points");
+  const profileStreak = document.getElementById("daily-profile-streak");
+  const profileLevel = document.getElementById("daily-profile-level");
+  const profileXpLabel = document.getElementById("daily-profile-xp-label");
+  const profileXp = document.getElementById("daily-profile-xp");
+  const profileAchievementList = document.getElementById("daily-profile-achievement-list");
+  const profileAchievementSummary = document.getElementById("daily-profile-achievement-summary");
   const game = document.getElementById("daily-challenge-game");
   const gameCloseButton = document.getElementById("daily-challenge-close-game");
   const clockLabel = document.getElementById("daily-challenge-clock");
@@ -42,26 +55,26 @@
   ];
 
   const challenges = [
-    { id: "survival", name: "Meowl Survival", mode: "dodge", duration: 20, speed: 2.2, spawn: 900, instructions: "Dodge the falling Meowl chaos until the timer runs out. Use ← → or A/D, or drag Meowl around the arena." },
-    { id: "click-frenzy", name: "Click Frenzy", mode: "clicks", duration: 14, goal: 22, instructions: "Bonk the bouncing Meowl 22 times before time runs out." },
-    { id: "dodge-chaos", name: "Dodge the Chaos", mode: "dodge", duration: 24, speed: 3, spawn: 680, instructions: "Survive a busy rain of Meowl3s. Arrows, A/D, or touch-drag to dodge." },
-    { id: "memory-test", name: "Memory Test", mode: "memory", duration: 28, goal: 5, instructions: "Watch the five Meowl-colored pads, then repeat their sequence." },
-    { id: "precision-clicker", name: "Precision Clicker", mode: "precision", duration: 16, goal: 8, size: 70, move: 750, instructions: "Catch the moving Meowl eight times before it escapes the timer." },
-    { id: "dont-click", name: "Don't Click Meowl", mode: "noClick", duration: 16, instructions: "Keep your paws off every Meowl, even when distractions bounce around." },
-    { id: "combo-master", name: "Combo Master", mode: "combo", duration: 16, goal: 10, comboWindow: 900, instructions: "Click Meowl ten times in a row. Wait longer than 0.9 seconds and your combo resets." },
-    { id: "tiny-target", name: "Tiny Target Trouble", mode: "precision", duration: 18, goal: 7, size: 48, move: 520, instructions: "Tap the tiny moving Meowl seven times. Tiny paws, enormous responsibility." },
-    { id: "meowl-mash", name: "Meowl Mash", mode: "clicks", duration: 18, goal: 30, instructions: "Thirty clicks. No, the Meowl does not get overtime for this." },
-    { id: "simon-meowl", name: "Simon Says Meowl", mode: "memory", duration: 30, goal: 6, instructions: "Watch the six-pad sequence, then repeat it without inventing new lore." },
-    { id: "quiet-king", name: "The Quiet Cat", mode: "noClick", duration: 20, instructions: "Stay calm for twenty seconds. The bouncing Meowls are trying to negotiate." },
-    { id: "meowl-parade", name: "Meowl Parade Survival", mode: "dodge", duration: 28, speed: 2.7, spawn: 760, instructions: "Avoid the falling parade of Meowl3s until the last one passes." },
-    { id: "precision-paws", name: "Precision Paws", mode: "precision", duration: 20, goal: 10, size: 56, move: 600, instructions: "Catch ten quick-moving Meowls. Your paws are the targeting system." },
-    { id: "combo-cat", name: "Combo Cat", mode: "combo", duration: 20, goal: 14, comboWindow: 700, instructions: "Build a fourteen-click combo. The Meowl believes in you, suspiciously." },
-    { id: "nap-trap", name: "Meowl's Nap Trap", mode: "noClick", duration: 18, instructions: "Do absolutely nothing while several very clickable Meowls appear." },
-    { id: "maximum-chaos", name: "Maximum Meowl Chaos", mode: "dodge", duration: 30, speed: 3.4, spawn: 570, instructions: "A full thirty seconds of falling Meowl3s. Dodge with keys or touch-drag." },
-    { id: "click-storm", name: "Click Storm", mode: "clicks", duration: 17, goal: 28, instructions: "Click the Meowl 28 times before this tiny storm timer runs out." },
-    { id: "blink-memory", name: "Blink and Remember", mode: "memory", duration: 24, goal: 5, instructions: "A quick five-pad memory test. Watch first; tap the colors second." },
-    { id: "blink-target", name: "Blink and You'll Miss It", mode: "precision", duration: 13, goal: 6, size: 44, move: 390, instructions: "Catch the very speedy Meowl six times. Blink responsibly." },
-    { id: "final-stand", name: "The Final Meowl Stand", mode: "dodge", duration: 32, speed: 3.8, spawn: 540, instructions: "Last one standing wins. Dodge the Meowl3 swarm for 32 seconds." }
+    { id: "survival", name: "Meowl Survival", mode: "dodge", duration: 20, speed: 2.2, spawn: 900, instructions: "Dodge Meowl3 for 20 seconds." },
+    { id: "click-frenzy", name: "Click Frenzy", mode: "clicks", duration: 14, goal: 22, instructions: "Click Meowl 22 times." },
+    { id: "dodge-chaos", name: "Dodge the Chaos", mode: "dodge", duration: 24, speed: 3, spawn: 680, instructions: "Dodge the cats for 24 seconds." },
+    { id: "memory-test", name: "Memory Test", mode: "memory", duration: 28, goal: 5, instructions: "Watch the pads, then repeat." },
+    { id: "precision-clicker", name: "Precision Clicker", mode: "precision", duration: 16, goal: 8, size: 70, move: 750, instructions: "Catch the moving Meowl 8 times." },
+    { id: "dont-click", name: "Don't Click Meowl", mode: "noClick", duration: 16, instructions: "Don't click a Meowl for 16 seconds." },
+    { id: "combo-master", name: "Combo Master", mode: "combo", duration: 16, goal: 10, comboWindow: 900, instructions: "Click 10 times fast." },
+    { id: "tiny-target", name: "Tiny Target Trouble", mode: "precision", duration: 18, goal: 7, size: 48, move: 520, instructions: "Catch the tiny Meowl 7 times." },
+    { id: "meowl-mash", name: "Meowl Mash", mode: "clicks", duration: 18, goal: 30, instructions: "Click Meowl 30 times." },
+    { id: "simon-meowl", name: "Simon Says Meowl", mode: "memory", duration: 30, goal: 6, instructions: "Watch, then repeat the sequence." },
+    { id: "quiet-king", name: "The Quiet Cat", mode: "noClick", duration: 20, instructions: "Don't click anything for 20 seconds." },
+    { id: "meowl-parade", name: "Meowl Parade Survival", mode: "dodge", duration: 28, speed: 2.7, spawn: 760, instructions: "Dodge the parade for 28 seconds." },
+    { id: "precision-paws", name: "Precision Paws", mode: "precision", duration: 20, goal: 10, size: 56, move: 600, instructions: "Catch 10 moving Meowls." },
+    { id: "combo-cat", name: "Combo Cat", mode: "combo", duration: 20, goal: 14, comboWindow: 700, instructions: "Click 14 times fast." },
+    { id: "nap-trap", name: "Meowl's Nap Trap", mode: "noClick", duration: 18, instructions: "Don't click for 18 seconds." },
+    { id: "maximum-chaos", name: "Maximum Meowl Chaos", mode: "dodge", duration: 30, speed: 3.4, spawn: 570, instructions: "Dodge for 30 seconds." },
+    { id: "click-storm", name: "Click Storm", mode: "clicks", duration: 17, goal: 28, instructions: "Click Meowl 28 times." },
+    { id: "blink-memory", name: "Blink and Remember", mode: "memory", duration: 24, goal: 5, instructions: "Repeat the pad sequence." },
+    { id: "blink-target", name: "Blink and You'll Miss It", mode: "precision", duration: 13, goal: 6, size: 44, move: 390, instructions: "Catch Meowl 6 times." },
+    { id: "final-stand", name: "The Final Meowl Stand", mode: "dodge", duration: 32, speed: 3.8, spawn: 540, instructions: "Dodge the swarm for 32 seconds." }
   ];
 
   const winMessages = [
@@ -80,22 +93,64 @@
   ];
 
   let cachedProgress = emptyProgress();
+  let cachedProfile = { name: "Meowl player", avatar: "" };
+  let selectedAvatar = "";
   let activeChallenge = null;
   let rolloverTimer;
-  let currentDate = localDateKey();
+  let serverClockEpoch = null;
+  let serverClockPerformance = 0;
+  let initialClockSyncComplete = false;
+  let currentDate = utcDateKey();
 
   function emptyProgress() {
     return { points: 0, xp: 0, totalCompletions: 0, achievements: [], streak: 0, lastCompletedDate: "", days: {} };
   }
 
-  function localDateKey(date = new Date()) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
+  function utcNow() {
+    return Number.isFinite(serverClockEpoch)
+      ? new Date(serverClockEpoch + performance.now() - serverClockPerformance)
+      : new Date();
+  }
+
+  function utcDateKey(date = utcNow()) {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
 
-  function dailyChallengeFor(dateKey = localDateKey()) {
+  async function syncServerClock() {
+    if (typeof fetch !== "function" || !window.location?.href) {
+      initialClockSyncComplete = true;
+      startButton.disabled = false;
+      return;
+    }
+    try {
+      const response = await fetch(window.location.href, { method: "HEAD", cache: "no-store" });
+      const serverTime = Date.parse(response.headers.get("Date"));
+      if (!Number.isFinite(serverTime)) return;
+      serverClockEpoch = serverTime;
+      serverClockPerformance = performance.now();
+      const newDate = utcDateKey();
+      if (newDate !== currentDate && activeChallenge) {
+        cancelActiveChallenge();
+        game.hidden = true;
+        panel.hidden = false;
+        backdrop.hidden = false;
+        startButton.hidden = false;
+      }
+      currentDate = newDate;
+      refreshChallengeInfo();
+      scheduleDateRollover();
+    } catch {
+      // Fall back to the device's UTC clock if the site date cannot be reached.
+    } finally {
+      initialClockSyncComplete = true;
+      startButton.disabled = false;
+    }
+  }
+
+  function dailyChallengeFor(dateKey = utcDateKey()) {
     function indexForDate(key) {
       let hash = 2166136261;
       for (let index = 0; index < key.length; index += 1) {
@@ -137,41 +192,126 @@
     }
   }
 
+  function loadProfile() {
+    try {
+      const saved = window.localStorage.getItem(PROFILE_KEY);
+      if (!saved) return cachedProfile;
+      const parsed = JSON.parse(saved);
+      if (!parsed || typeof parsed !== "object") return cachedProfile;
+      return {
+        name: typeof parsed.name === "string" ? parsed.name.slice(0, 24) || "Meowl player" : "Meowl player",
+        avatar: typeof parsed.avatar === "string" && parsed.avatar.startsWith("data:image/") ? parsed.avatar : ""
+      };
+    } catch {
+      return cachedProfile;
+    }
+  }
+
+  function showProfileSummary(profile = loadProfile()) {
+    profileSummaryName.textContent = profile.name;
+    profileSmallAvatar.hidden = !profile.avatar;
+    if (profile.avatar) profileSmallAvatar.src = profile.avatar;
+  }
+
+  function refreshProfileStats(progress = loadProgress()) {
+    profilePoints.textContent = `${progress.points} points`;
+    profileStreak.textContent = `${progress.streak} day streak`;
+    const today = progress.days[utcDateKey()];
+    bestLabel.textContent = `Today's best: ${Number.isFinite(today?.bestResult) ? today.bestResult : "—"}`;
+    profileLevel.textContent = `Level ${Math.floor(progress.xp / XP_PER_LEVEL) + 1}`;
+    profileXpLabel.textContent = `${progress.xp % XP_PER_LEVEL} / ${XP_PER_LEVEL} XP`;
+    profileXp.value = progress.xp % XP_PER_LEVEL;
+    profileAchievementList.replaceChildren();
+    profileAchievementSummary.textContent = `Achievements (${progress.achievements.length}/${achievements.length})`;
+    achievements.forEach((achievement) => {
+      const item = document.createElement("li");
+      const earned = progress.achievements.includes(achievement.id);
+      item.textContent = `${earned ? "✓" : "○"} ${achievement.name}${earned ? ` (+${achievement.xp} XP)` : ""}`;
+      profileAchievementList.append(item);
+    });
+  }
+
+  function openProfile() {
+    const profile = loadProfile();
+    selectedAvatar = profile.avatar;
+    profileNameInput.value = profile.name;
+    profileAvatarPreview.hidden = !profile.avatar;
+    if (profile.avatar) profileAvatarPreview.src = profile.avatar;
+    profileSaveStatus.textContent = "";
+    refreshProfileStats();
+    profileBackdrop.hidden = false;
+    profilePanel.hidden = false;
+    profileNameInput.focus();
+  }
+
+  function closeProfile() {
+    profilePanel.hidden = true;
+    profileBackdrop.hidden = true;
+    profileOpenButton.focus();
+  }
+
+  function saveProfile() {
+    const profile = {
+      name: profileNameInput.value.trim().slice(0, 24) || "Meowl player",
+      avatar: selectedAvatar
+    };
+    cachedProfile = profile;
+    try {
+      window.localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+      profileSaveStatus.textContent = "Saved";
+    } catch {
+      profileSaveStatus.textContent = "Couldn't save on this device";
+    }
+    showProfileSummary(profile);
+  }
+
+  function readProfilePicture(file) {
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      const image = new Image();
+      image.addEventListener("load", () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 128;
+        canvas.height = 128;
+        const context = canvas.getContext("2d");
+        const side = Math.min(image.naturalWidth, image.naturalHeight);
+        const sx = (image.naturalWidth - side) / 2;
+        const sy = (image.naturalHeight - side) / 2;
+        context.drawImage(image, sx, sy, side, side, 0, 0, 128, 128);
+        selectedAvatar = canvas.toDataURL("image/jpeg", 0.8);
+        profileAvatarPreview.src = selectedAvatar;
+        profileAvatarPreview.hidden = false;
+      }, { once: true });
+      image.src = String(reader.result);
+    }, { once: true });
+    reader.readAsDataURL(file);
+  }
+
   function dateOffset(dateKey, offset) {
     const [year, month, day] = dateKey.split("-").map(Number);
-    return localDateKey(new Date(year, month - 1, day + offset));
+    return utcDateKey(new Date(Date.UTC(year, month - 1, day + offset)));
   }
 
   function refreshChallengeInfo() {
-    currentDate = localDateKey();
+    currentDate = utcDateKey();
     const challenge = dailyChallengeFor(currentDate);
     const progress = loadProgress();
     const day = progress.days[currentDate];
     const prettyDate = new Intl.DateTimeFormat(undefined, {
-      weekday: "long", year: "numeric", month: "long", day: "numeric"
-    }).format(new Date());
+      weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC"
+    }).format(utcNow());
 
-    title.textContent = "🎯 Daily Challenge";
+    title.textContent = "Daily Challenge";
     dateLabel.textContent = prettyDate;
     nameLabel.textContent = challenge.name;
     instructionsLabel.textContent = challenge.instructions;
-    rewardLabel.textContent = `Reward: ${REWARD_POINTS} points + 50 XP on your first clear today. Achievements grant bonus XP; replays can improve your best.`;
-    pointsLabel.textContent = `Points: ${progress.points}`;
-    streakLabel.textContent = `Streak: ${progress.streak} ${progress.streak === 1 ? "day" : "days"}`;
+    rewardLabel.textContent = `${REWARD_POINTS} points + 50 XP for your first win today.`;
     bestLabel.textContent = day?.bestResult !== null && Number.isFinite(day?.bestResult)
-      ? `Best: ${day.bestResult}` : "Best: —";
-    statusLabel.textContent = day?.completed ? "✅ Completed today" : "Not completed";
-    const level = Math.floor(progress.xp / XP_PER_LEVEL) + 1;
-    levelLabel.textContent = `Level ${level}`;
-    xpLabel.textContent = `${progress.xp % XP_PER_LEVEL} / ${XP_PER_LEVEL} XP`;
-    xpProgress.value = progress.xp % XP_PER_LEVEL;
-    achievementList.replaceChildren();
-    achievements.forEach((achievement) => {
-      const item = document.createElement("li");
-      const earned = progress.achievements.includes(achievement.id);
-      item.textContent = `${earned ? "✓" : "○"} ${achievement.name} — ${achievement.description}${earned ? ` (+${achievement.xp} XP)` : ""}`;
-      achievementList.append(item);
-    });
+      ? `Today's best: ${day.bestResult}` : "Today's best: —";
+    statusLabel.textContent = day?.completed ? "Done today" : "Not done";
+    showProfileSummary();
+    if (!profilePanel.hidden) refreshProfileStats(progress);
     launcher.setAttribute("aria-label", `Daily Challenge: ${challenge.name}`);
   }
 
@@ -184,6 +324,8 @@
 
   function closePanel() {
     cancelActiveChallenge();
+    profilePanel.hidden = true;
+    profileBackdrop.hidden = true;
     panel.hidden = true;
     backdrop.hidden = true;
     game.hidden = true;
@@ -195,17 +337,23 @@
 
   function scheduleDateRollover() {
     clearTimeout(rolloverTimer);
-    const now = new Date();
-    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const now = utcNow();
+    const midnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
     rolloverTimer = setTimeout(() => {
+      const wasPlaying = Boolean(activeChallenge);
       if (activeChallenge) cancelActiveChallenge();
+      if (wasPlaying) {
+        panel.hidden = false;
+        backdrop.hidden = false;
+      }
       game.hidden = true;
       startButton.hidden = false;
       startButton.textContent = "Start Challenge";
       result.hidden = true;
+      currentDate = utcDateKey();
       refreshChallengeInfo();
       scheduleDateRollover();
-    }, Math.max(1000, midnight.getTime() - now.getTime() + 30));
+    }, Math.max(1000, midnight - now.getTime() + 30));
   }
 
   function resetGameDisplay() {
@@ -218,6 +366,7 @@
   }
 
   function startChallenge() {
+    if (!initialClockSyncComplete) return;
     cancelActiveChallenge();
     refreshChallengeInfo();
     const challenge = dailyChallengeFor(currentDate);
@@ -227,8 +376,8 @@
     game.hidden = false;
     const runtime = {
       challenge,
-      startedAt: Date.now(),
-      deadline: Date.now() + challenge.duration * 1000,
+      startedAt: performance.now(),
+      deadline: performance.now() + challenge.duration * 1000,
       progress: 0,
       maxProgress: challenge.goal || challenge.duration,
       timers: [],
@@ -265,16 +414,16 @@
 
   function updateChallengeClock(runtime) {
     if (activeChallenge !== runtime || runtime.finished) return;
-    const remaining = Math.max(0, (runtime.deadline - Date.now()) / 1000);
+    const remaining = Math.max(0, (runtime.deadline - performance.now()) / 1000);
     clockLabel.textContent = `${remaining.toFixed(1)}s`;
     if (runtime.challenge.mode === "combo" && runtime.lastTapAt
-        && Date.now() - runtime.lastTapAt > runtime.challenge.comboWindow && runtime.progress) {
+        && performance.now() - runtime.lastTapAt > runtime.challenge.comboWindow && runtime.progress) {
       runtime.progress = 0;
       updateProgress(runtime, "Combo dropped! Tap quickly to rebuild it.");
     }
     if (runtime.challenge.mode === "noClick") {
       runtime.progress = Math.min(runtime.challenge.duration,
-        Math.floor((Date.now() - runtime.startedAt) / 1000));
+        Math.floor((performance.now() - runtime.startedAt) / 1000));
       updateProgress(runtime);
     }
     if (remaining <= 0) {
@@ -478,7 +627,7 @@
     runtime.lastFrame = timestamp;
     const arenaHeight = arena.clientHeight;
     const playerTop = arenaHeight - runtime.player.offsetHeight;
-    const elapsedSeconds = (Date.now() - runtime.startedAt) / 1000;
+    const elapsedSeconds = (performance.now() - runtime.startedAt) / 1000;
     const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const speedScale = reducedMotion ? 0.7 : 1;
 
@@ -513,14 +662,14 @@
     const runtime = activeChallenge;
     if (!runtime || runtime.finished) return;
     if (runtime.challenge.mode === "combo") {
-      const now = Date.now();
+      const now = performance.now();
       if (runtime.lastTapAt && now - runtime.lastTapAt > runtime.challenge.comboWindow) runtime.progress = 0;
       runtime.lastTapAt = now;
     }
     runtime.progress += 1;
     updateProgress(runtime, runtime.challenge.mode === "combo" ? "Combo! Keep the paws moving." : "Nice tap!");
     if (runtime.progress >= runtime.challenge.goal) {
-      const speedBonus = Math.floor(Math.max(0, runtime.deadline - Date.now()) / 100);
+      const speedBonus = Math.floor(Math.max(0, runtime.deadline - performance.now()) / 100);
       finishChallenge(true, runtime.progress + speedBonus);
     }
   }
@@ -540,7 +689,7 @@
     runtime.timers.push(unlight);
     updateProgress(runtime, "Correct! The fish-shaped neurons are firing.");
     if (runtime.sequenceIndex >= runtime.sequence.length) {
-      const speedBonus = Math.floor(Math.max(0, runtime.deadline - Date.now()) / 100);
+      const speedBonus = Math.floor(Math.max(0, runtime.deadline - performance.now()) / 100);
       finishChallenge(true, runtime.progress + speedBonus);
     }
   }
@@ -586,7 +735,7 @@
     let xpEarned = 0;
     if (success && !day.completed) {
       day.completed = true;
-      day.completedAt = new Date().toISOString();
+      day.completedAt = utcNow().toISOString();
       day.pointsAwarded = REWARD_POINTS;
       progress.points += REWARD_POINTS;
       progress.xp += 50;
@@ -638,12 +787,17 @@
   launcher.addEventListener("click", openPanel);
   closeButton.addEventListener("click", closePanel);
   backdrop.addEventListener("click", closePanel);
+  profileOpenButton.addEventListener("click", openProfile);
+  profileCloseButton.addEventListener("click", closeProfile);
+  profileBackdrop.addEventListener("click", closeProfile);
+  profileSaveButton.addEventListener("click", saveProfile);
+  profilePictureInput.addEventListener("change", () => readProfilePicture(profilePictureInput.files?.[0]));
   startButton.addEventListener("click", startChallenge);
   arena.addEventListener("click", (event) => {
     const target = event.target.closest("[data-daily-action]");
     if (target?.dataset.dailyAction === "target") handleTargetClick();
     if (target?.dataset.dailyAction === "decoy" && activeChallenge) {
-      finishChallenge(false, Math.floor((Date.now() - activeChallenge.startedAt) / 1000));
+      finishChallenge(false, Math.floor((performance.now() - activeChallenge.startedAt) / 1000));
     }
     const memoryPad = event.target.closest("[data-daily-pad]");
     if (memoryPad) handleMemoryInput(Number(memoryPad.dataset.dailyPad));
@@ -651,15 +805,21 @@
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
-      if (!game.hidden) {
-        event.preventDefault();
-        closePanel();
-      }
+      if (!profilePanel.hidden) closeProfile();
+      else if (!panel.hidden || !game.hidden) closePanel();
     }
   });
 
   gameCloseButton.addEventListener("click", closePanel);
 
+  startButton.disabled = true;
+  showProfileSummary();
   refreshChallengeInfo();
   scheduleDateRollover();
+  syncServerClock();
+  setInterval(syncServerClock, 6 * 60 * 60 * 1000);
+  window.addEventListener("focus", syncServerClock);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) syncServerClock();
+  });
 })();

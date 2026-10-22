@@ -297,23 +297,65 @@
       left: 50%;
       z-index: 10;
       box-sizing: border-box;
-      width: min(520px, calc(100vw - 24px));
+      width: min(440px, calc(100vw - 24px));
       max-height: min(92dvh, 820px);
       overflow: auto;
-      padding: 20px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
+      padding: 16px;
+      border: 1px solid #bbb;
+      border-radius: 3px;
       background: #fff;
       color: #111;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+      box-shadow: none;
       font: 16px/1.4 system-ui, sans-serif;
       transform: translate(-50%, -50%);
     }
 
     #daily-challenge-panel[hidden],
     #daily-challenge-backdrop[hidden],
+    #daily-profile-backdrop[hidden],
+    #daily-profile-panel[hidden],
     #daily-challenge-game[hidden],
     #daily-challenge-result[hidden] { display: none; }
+
+    #daily-profile-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 13;
+      background: rgba(0, 0, 0, .65);
+    }
+
+    #daily-profile-panel {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      z-index: 14;
+      box-sizing: border-box;
+      width: min(400px, calc(100vw - 24px));
+      max-height: 90dvh;
+      overflow: auto;
+      padding: 16px;
+      border: 1px solid #bbb;
+      background: #fff;
+      color: #111;
+      font: 16px/1.4 system-ui, sans-serif;
+      transform: translate(-50%, -50%);
+    }
+
+    .daily-profile-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .daily-profile-heading h2 { margin: 0; font-size: 1.2rem; }
+    #daily-profile-panel label { display: block; margin: 12px 0 4px; }
+    #daily-profile-panel input[type="text"] { box-sizing: border-box; width: 100%; padding: 9px; font: inherit; }
+    #daily-profile-avatar-preview { display: block; width: 72px; height: 72px; margin: 8px 0; border: 1px solid #bbb; border-radius: 50%; object-fit: cover; }
+    #daily-profile-panel button { min-height: 40px; border: 1px solid #222; border-radius: 3px; padding: 7px 12px; background: #eee; color: #111; font: inherit; cursor: pointer; }
+    #daily-profile-stats { margin-top: 16px; border-top: 1px solid #ddd; padding-top: 10px; }
+    #daily-profile-stats p { margin: 5px 0; }
+    #daily-profile-xp { width: 100%; height: 12px; accent-color: #333; }
+    #daily-profile-achievements { margin-top: 10px; }
+    #daily-profile-achievements summary { cursor: pointer; }
+
+    .daily-profile-summary { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+    .daily-profile-summary img { width: 28px; height: 28px; border: 1px solid #bbb; border-radius: 50%; object-fit: cover; }
+    .daily-profile-summary button { margin-left: auto; }
 
     #daily-challenge-game {
       position: fixed;
@@ -387,9 +429,9 @@
     #daily-challenge-start {
       min-height: 44px;
       border: 1px solid #222;
-      border-radius: 5px;
+      border-radius: 3px;
       padding: 8px 12px;
-      background: #f3f3f3;
+      background: #eee;
       color: #111;
       font: 600 16px/1.2 system-ui, sans-serif;
       cursor: pointer;
@@ -402,19 +444,8 @@
     #daily-challenge-panel button:focus-visible,
     #daily-challenge-launch:focus-visible { outline: 3px solid #325dff; outline-offset: 3px; }
 
-    .daily-challenge-stats {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 8px 0 14px;
-    }
-
-    .daily-challenge-stats span,
     #daily-challenge-status {
-      padding: 6px 10px;
-      border-radius: 4px;
-      background: #f1f1f1;
-      font-weight: 600;
+      font-weight: 500;
     }
 
     #daily-challenge-status { display: inline-block; }
@@ -487,7 +518,6 @@
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
-      height: 100%;
       padding: 12px;
       box-sizing: border-box;
     }
@@ -514,13 +544,6 @@
       background: #f7f7f7;
       font-weight: 600;
     }
-
-    .daily-xp-row { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
-    .daily-xp-row progress { flex: 1; height: 12px; accent-color: #333; }
-    #daily-challenge-achievements { margin-top: 14px; padding-top: 10px; border-top: 1px solid #ddd; }
-    #daily-challenge-achievements h3 { margin: 0 0 6px; font-size: 1rem; }
-    #daily-challenge-achievements ul { margin: 0; padding-left: 20px; }
-    #daily-challenge-achievements li { margin: 3px 0; }
 
     @keyframes daily-decoy-wiggle {
       to { rotate: 8deg; scale: 1.08; }
@@ -551,24 +574,45 @@
   <section id="daily-challenge-panel" role="dialog" aria-modal="true" aria-labelledby="daily-challenge-title" tabindex="-1" hidden>
     <div class="daily-challenge-heading">
       <div>
-        <h2 id="daily-challenge-title">🎯 Daily Challenge</h2>
+        <h2 id="daily-challenge-title">Daily Challenge</h2>
         <p id="daily-challenge-date"></p>
       </div>
       <button id="daily-challenge-close" type="button" aria-label="Close challenge">✕</button>
     </div>
-    <div class="daily-challenge-stats" aria-live="polite">
-      <span id="daily-challenge-points">Points: 0</span>
-      <span id="daily-challenge-streak">Streak: 0 days</span>
-      <span id="daily-challenge-best">Best: —</span>
-      <span id="daily-challenge-status">Not completed</span>
+    <div class="daily-profile-summary">
+      <img id="daily-profile-small-avatar" alt="" hidden>
+      <span id="daily-profile-summary-name">Meowl player</span>
+      <button id="daily-profile-open" type="button">Profile &amp; stats</button>
     </div>
-    <div class="daily-xp-row"><strong id="daily-challenge-level">Level 1</strong><span id="daily-challenge-xp">0 / 250 XP</span><progress id="daily-challenge-xp-progress" max="250" value="0" aria-label="Progress to next level"></progress></div>
-    <div id="daily-challenge-achievements"><h3>Achievements</h3><ul id="daily-challenge-achievement-list"></ul></div>
     <h3 id="daily-challenge-name"></h3>
     <p id="daily-challenge-instructions"></p>
     <p id="daily-challenge-reward"></p>
     <button id="daily-challenge-start" type="button">Start Challenge</button>
     <p id="daily-challenge-result" aria-live="assertive" hidden></p>
+  </section>
+  <div id="daily-profile-backdrop" hidden></div>
+  <section id="daily-profile-panel" role="dialog" aria-modal="true" aria-labelledby="daily-profile-title" hidden>
+    <div class="daily-profile-heading">
+      <h2 id="daily-profile-title">Profile &amp; stats</h2>
+      <button id="daily-profile-close" type="button" aria-label="Close profile">Close</button>
+    </div>
+    <label for="daily-profile-name-input">Name</label>
+    <input id="daily-profile-name-input" type="text" maxlength="24" autocomplete="nickname" placeholder="Meowl player">
+    <label for="daily-profile-picture-input">Picture</label>
+    <img id="daily-profile-avatar-preview" alt="Profile picture preview" hidden>
+    <input id="daily-profile-picture-input" type="file" accept="image/*">
+    <button id="daily-profile-save" type="button">Save</button>
+    <span id="daily-profile-save-status" role="status"></span>
+    <div id="daily-profile-stats">
+      <p id="daily-challenge-status">Not done</p>
+      <p id="daily-profile-points">0 points</p>
+      <p id="daily-profile-streak">0 day streak</p>
+      <p id="daily-challenge-best">Today's best: —</p>
+      <strong id="daily-profile-level">Level 1</strong>
+      <span id="daily-profile-xp-label">0 / 250 XP</span>
+      <progress id="daily-profile-xp" max="250" value="0" aria-label="Progress to next level"></progress>
+      <details id="daily-profile-achievements"><summary id="daily-profile-achievement-summary">Achievements</summary><ul id="daily-profile-achievement-list"></ul></details>
+    </div>
   </section>
   <div id="daily-challenge-game" hidden>
     <div id="daily-challenge-hud"><span id="daily-challenge-clock"></span><span id="daily-challenge-score"></span></div>
