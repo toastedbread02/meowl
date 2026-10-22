@@ -64,26 +64,26 @@
   ];
 
   const challenges = [
-    { id: "survival", name: "Meowl Survival", mode: "dodge", duration: 15, speed: 1.5, spawn: 1200, instructions: "Dodge Meowl3 for 15 seconds." },
-    { id: "click-frenzy", name: "Click Frenzy", mode: "clicks", duration: 18, goal: 12, instructions: "Click Meowl 12 times." },
-    { id: "dodge-chaos", name: "Dodge the Chaos", mode: "dodge", duration: 18, speed: 1.8, spawn: 1000, instructions: "Dodge the cats for 18 seconds." },
-    { id: "memory-test", name: "Memory Test", mode: "memory", duration: 30, goal: 3, instructions: "Watch the pads, then repeat." },
-    { id: "precision-clicker", name: "Precision Clicker", mode: "precision", duration: 20, goal: 5, size: 80, move: 1000, instructions: "Catch the moving Meowl 5 times." },
-    { id: "dont-click", name: "Don't Click Meowl", mode: "noClick", duration: 12, instructions: "Don't click a Meowl for 12 seconds." },
-    { id: "combo-master", name: "Combo Master", mode: "combo", duration: 18, goal: 6, comboWindow: 1200, instructions: "Click 6 times fast." },
-    { id: "tiny-target", name: "Tiny Target Trouble", mode: "precision", duration: 20, goal: 5, size: 58, move: 800, instructions: "Catch the tiny Meowl 5 times." },
-    { id: "meowl-mash", name: "Meowl Mash", mode: "clicks", duration: 20, goal: 18, instructions: "Click Meowl 18 times." },
-    { id: "simon-meowl", name: "Simon Says Meowl", mode: "memory", duration: 35, goal: 4, instructions: "Watch, then repeat the sequence." },
-    { id: "quiet-king", name: "The Quiet Cat", mode: "noClick", duration: 15, instructions: "Don't click anything for 15 seconds." },
-    { id: "meowl-parade", name: "Meowl Parade Survival", mode: "dodge", duration: 20, speed: 1.8, spawn: 1050, instructions: "Dodge the parade for 20 seconds." },
-    { id: "precision-paws", name: "Precision Paws", mode: "precision", duration: 24, goal: 6, size: 70, move: 850, instructions: "Catch 6 moving Meowls." },
-    { id: "combo-cat", name: "Combo Cat", mode: "combo", duration: 24, goal: 8, comboWindow: 1000, instructions: "Click 8 times fast." },
-    { id: "nap-trap", name: "Meowl's Nap Trap", mode: "noClick", duration: 14, instructions: "Don't click for 14 seconds." },
-    { id: "maximum-chaos", name: "Maximum Meowl Chaos", mode: "dodge", duration: 20, speed: 2.2, spawn: 850, instructions: "Dodge for 20 seconds." },
-    { id: "click-storm", name: "Click Storm", mode: "clicks", duration: 20, goal: 18, instructions: "Click Meowl 18 times." },
-    { id: "blink-memory", name: "Blink and Remember", mode: "memory", duration: 30, goal: 3, instructions: "Repeat the pad sequence." },
-    { id: "blink-target", name: "Blink and You'll Miss It", mode: "precision", duration: 17, goal: 4, size: 54, move: 550, instructions: "Catch Meowl 4 times." },
-    { id: "final-stand", name: "The Final Meowl Stand", mode: "dodge", duration: 22, speed: 2.5, spawn: 800, instructions: "Dodge the swarm for 22 seconds." }
+    { id: "survival", name: "Meowl Survival", mode: "dodge", duration: 10, speed: 0.9, spawn: 1600, instructions: "Dodge Meowl3 for 10 seconds." },
+    { id: "click-frenzy", name: "Click Frenzy", mode: "clicks", duration: 20, goal: 6, instructions: "Click Meowl 6 times." },
+    { id: "dodge-chaos", name: "Dodge the Chaos", mode: "dodge", duration: 12, speed: 1.0, spawn: 1500, instructions: "Dodge the cats for 12 seconds." },
+    { id: "memory-test", name: "Memory Test", mode: "memory", duration: 30, goal: 2, instructions: "Watch the pads, then repeat them." },
+    { id: "precision-clicker", name: "Precision Clicker", mode: "precision", duration: 25, goal: 3, size: 100, move: 1600, instructions: "Tap the moving Meowl 3 times." },
+    { id: "dont-click", name: "Don't Click Meowl", mode: "noClick", duration: 8, instructions: "Don't click a Meowl for 8 seconds." },
+    { id: "combo-master", name: "Combo Master", mode: "combo", duration: 20, goal: 4, comboWindow: 1800, instructions: "Tap the Meowl 4 times without a long pause." },
+    { id: "tiny-target", name: "Small Target Trouble", mode: "precision", duration: 25, goal: 3, size: 88, move: 1400, instructions: "Catch the smaller Meowl 3 times." },
+    { id: "meowl-mash", name: "Meowl Mash", mode: "clicks", duration: 20, goal: 8, instructions: "Click Meowl 8 times." },
+    { id: "simon-meowl", name: "Simon Says Meowl", mode: "memory", duration: 35, goal: 2, instructions: "Watch, then repeat the sequence." },
+    { id: "quiet-king", name: "The Quiet Cat", mode: "noClick", duration: 9, instructions: "Don't click anything for 9 seconds." },
+    { id: "meowl-parade", name: "Meowl Parade Survival", mode: "dodge", duration: 12, speed: 1.1, spawn: 1500, instructions: "Dodge the parade for 12 seconds." },
+    { id: "precision-paws", name: "Precision Paws", mode: "precision", duration: 25, goal: 3, size: 96, move: 1500, instructions: "Catch 3 moving Meowls." },
+    { id: "combo-cat", name: "Combo Cat", mode: "combo", duration: 22, goal: 5, comboWindow: 1600, instructions: "Tap 5 times without a long pause." },
+    { id: "nap-trap", name: "Meowl's Nap Trap", mode: "noClick", duration: 9, instructions: "Don't click for 9 seconds." },
+    { id: "maximum-chaos", name: "Maximum Meowl Chaos", mode: "dodge", duration: 12, speed: 1.2, spawn: 1400, instructions: "Dodge for 12 seconds." },
+    { id: "click-storm", name: "Click Storm", mode: "clicks", duration: 22, goal: 9, instructions: "Click Meowl 9 times." },
+    { id: "blink-memory", name: "Blink and Remember", mode: "memory", duration: 30, goal: 2, instructions: "Repeat the pad sequence." },
+    { id: "blink-target", name: "Blink and You'll Miss It", mode: "precision", duration: 25, goal: 3, size: 92, move: 1500, instructions: "Catch Meowl 3 times." },
+    { id: "final-stand", name: "The Final Meowl Stand", mode: "dodge", duration: 14, speed: 1.4, spawn: 1300, instructions: "Dodge the swarm for 14 seconds." }
   ];
 
   const winMessages = [
@@ -337,7 +337,7 @@
     dateLabel.textContent = prettyDate;
     nameLabel.textContent = challenge.name;
     instructionsLabel.textContent = challenge.instructions;
-    rewardLabel.textContent = `${REWARD_POINTS} points + ${XP_PER_LEVEL} XP (a full level) for your first win today — leveling up once a day keeps your streak alive.`;
+    rewardLabel.textContent = `${REWARD_POINTS} points + ${XP_PER_LEVEL} XP on your first win today. Level up once a day to keep your streak.`;
     bestLabel.textContent = day?.bestResult !== null && Number.isFinite(day?.bestResult)
       ? `Today's best: ${day.bestResult}` : "Today's best: —";
     statusLabel.textContent = day?.completed ? "Done today" : "Not done";
@@ -551,9 +551,9 @@
     }
     const pad = runtime.pads[runtime.sequence[index]];
     pad.classList.add("lit");
-    const offTimer = setTimeout(() => pad.classList.remove("lit"), 320);
+    const offTimer = setTimeout(() => pad.classList.remove("lit"), 460);
     runtime.timers.push(offTimer);
-    const nextTimer = setTimeout(() => showMemoryStep(runtime, index + 1), 520);
+    const nextTimer = setTimeout(() => showMemoryStep(runtime, index + 1), 720);
     runtime.timers.push(nextTimer);
   }
 
@@ -665,7 +665,7 @@
     for (let index = runtime.hazards.length - 1; index >= 0; index -= 1) {
       const hazard = runtime.hazards[index];
       let y = Number(hazard.dataset.y);
-      y += (runtime.challenge.speed + Math.floor(elapsedSeconds / 6) * 0.35) * speedScale * delta;
+      y += (runtime.challenge.speed + Math.floor(elapsedSeconds / 6) * 0.2) * speedScale * delta;
       hazard.dataset.y = String(y);
       hazard.style.top = `${y}px`;
       const x = Number(hazard.dataset.x);
@@ -858,39 +858,126 @@
     if (!streakCelebration) return;
     clearCelebrationTimers();
     streakCelebration.classList.remove("play");
-    streakCelebration.querySelectorAll(".streak-spark").forEach((spark) => spark.remove());
     streakOldNumber.textContent = String(previousStreak);
     streakNewNumber.textContent = String(streak);
     streakCountLabel.textContent = streak === 1 ? "day streak started" : "day streak";
     streakCelebration.hidden = false;
     const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!reducedMotion) spawnStreakSparks(streakCelebration.querySelector(".streak-stage"));
+    if (!reducedMotion) startStreakEmbers(540);
     void streakCelebration.offsetWidth;
     streakCelebration.classList.add("play");
     celebrationTimers.push(setTimeout(() => {
+      stopStreakEmbers();
       streakCelebration.hidden = true;
       streakCelebration.classList.remove("play");
-      streakCelebration.querySelectorAll(".streak-spark").forEach((spark) => spark.remove());
-    }, reducedMotion ? 1800 : 3400));
+    }, reducedMotion ? 1800 : 3600));
   }
 
-  function spawnStreakSparks(stage) {
-    if (!stage) return;
-    const colors = ["#ffe6a3", "#ffd166", "#ffb347", "#ff7a1a"];
-    for (let index = 0; index < 18; index += 1) {
-      const spark = document.createElement("span");
-      spark.className = "streak-spark";
-      spark.setAttribute("aria-hidden", "true");
-      spark.style.setProperty("--spark-size", `${(4 + Math.random() * 6).toFixed(1)}px`);
-      spark.style.setProperty("--spark-x", `${((Math.random() - 0.5) * 190).toFixed(0)}px`);
-      spark.style.setProperty("--spark-y", `${(-90 - Math.random() * 150).toFixed(0)}px`);
-      spark.style.setProperty("--spark-delay", `${(0.52 + Math.random() * 0.9).toFixed(2)}s`);
-      spark.style.setProperty("--spark-duration", `${(1.1 + Math.random() * 0.9).toFixed(2)}s`);
-      spark.style.setProperty("--spark-color", colors[index % colors.length]);
-      spark.style.left = `${(50 + (Math.random() - 0.5) * 18).toFixed(1)}%`;
-      spark.style.top = `${(58 + (Math.random() - 0.5) * 14).toFixed(1)}%`;
-      stage.append(spark);
-    }
+  let streakEmberFrame = 0;
+  let streakEmberStop = null;
+
+  function stopStreakEmbers() {
+    if (streakEmberFrame) cancelAnimationFrame(streakEmberFrame);
+    streakEmberFrame = 0;
+    if (streakEmberStop) streakEmberStop();
+    streakEmberStop = null;
+  }
+
+  // Embers are painted on a canvas instead of DOM nodes: they blend additively, stay
+  // smooth at 60fps and cost nothing once the celebration is over.
+  function startStreakEmbers(delay) {
+    const canvas = document.getElementById("streak-embers");
+    if (!canvas || typeof canvas.getContext !== "function") return;
+    stopStreakEmbers();
+    const context = canvas.getContext("2d");
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    const bounds = canvas.getBoundingClientRect();
+    const width = bounds.width;
+    const height = bounds.height;
+    if (!width || !height) return;
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(height * ratio);
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+    const palette = [
+      [255, 236, 176],
+      [255, 208, 120],
+      [255, 168, 74],
+      [255, 118, 32]
+    ];
+    const embers = [];
+    let startedAt = 0;
+    let previousAt = 0;
+    let lastSpawn = 0;
+
+    const spawn = (now) => {
+      const count = 2 + Math.floor(Math.random() * 3);
+      for (let index = 0; index < count && embers.length < 150; index += 1) {
+        const color = palette[Math.floor(Math.random() * palette.length)];
+        embers.push({
+          x: width * 0.5 + (Math.random() - 0.5) * width * 0.16,
+          y: height * 0.63 + (Math.random() - 0.5) * height * 0.05,
+          vx: (Math.random() - 0.5) * 26,
+          vy: -46 - Math.random() * 62,
+          age: 0,
+          life: 780 + Math.random() * 900,
+          size: 1.1 + Math.random() * 2.5,
+          sway: 0.6 + Math.random() * 1.6,
+          phase: Math.random() * Math.PI * 2,
+          color
+        });
+      }
+      lastSpawn = now;
+    };
+
+    const draw = (now) => {
+      if (!startedAt) {
+        startedAt = now;
+        previousAt = now;
+      }
+      const delta = Math.min(now - previousAt, 48);
+      previousAt = now;
+      const elapsed = now - startedAt;
+      context.clearRect(0, 0, width, height);
+      context.globalCompositeOperation = "lighter";
+
+      if (elapsed > delay - 120) {
+        const interval = elapsed > 2200 ? 90 : 46;
+        if (now - lastSpawn > interval) spawn(now);
+      }
+
+      for (let index = embers.length - 1; index >= 0; index -= 1) {
+        const ember = embers[index];
+        ember.age += delta;
+        if (ember.age >= ember.life) {
+          embers.splice(index, 1);
+          continue;
+        }
+        const seconds = delta / 1000;
+        ember.vy += 14 * seconds;
+        ember.x += (ember.vx + Math.sin((ember.age / 240) + ember.phase) * ember.sway * 14) * seconds;
+        ember.y += ember.vy * seconds;
+
+        const progress = ember.age / ember.life;
+        const fade = progress < 0.16 ? progress / 0.16 : 1 - ((progress - 0.16) / 0.84);
+        const size = ember.size * (1 - progress * 0.35);
+        const [r, g, b] = ember.color;
+        context.fillStyle = `rgba(${r}, ${g}, ${b}, ${(0.10 * fade).toFixed(3)})`;
+        context.beginPath();
+        context.arc(ember.x, ember.y, size * 3.4, 0, Math.PI * 2);
+        context.fill();
+        context.fillStyle = `rgba(${r}, ${g}, ${b}, ${(0.85 * fade).toFixed(3)})`;
+        context.beginPath();
+        context.arc(ember.x, ember.y, size, 0, Math.PI * 2);
+        context.fill();
+      }
+
+      context.globalCompositeOperation = "source-over";
+      streakEmberFrame = requestAnimationFrame(draw);
+    };
+
+    streakEmberStop = () => context.clearRect(0, 0, width, height);
+    streakEmberFrame = requestAnimationFrame(draw);
   }
 
   function cleanupRuntime(runtime) {

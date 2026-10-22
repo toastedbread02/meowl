@@ -654,36 +654,39 @@
       display: grid;
       place-items: center;
       overflow: hidden;
-      background: rgba(8, 5, 2, 0);
+      background-color: rgba(10, 6, 3, 0);
+      --streak-duration: 3.6s;
     }
 
     #streak-celebration[hidden] { display: none; }
 
     #streak-celebration.play {
-      animation: streak-dim 3.3s cubic-bezier(0.35, 0, 0.2, 1) both;
+      animation: streak-veil var(--streak-duration) cubic-bezier(0.4, 0, 0.2, 1) both;
     }
 
-    @keyframes streak-dim {
-      0% { background-color: rgba(8, 5, 2, 0); }
-      13% { background-color: rgba(8, 5, 2, 0.86); }
-      86% { background-color: rgba(8, 5, 2, 0.86); }
-      100% { background-color: rgba(8, 5, 2, 0); }
+    @keyframes streak-veil {
+      0% { background-color: rgba(10, 6, 3, 0); }
+      16% { background-color: rgba(10, 6, 3, 0.9); }
+      84% { background-color: rgba(10, 6, 3, 0.9); }
+      100% { background-color: rgba(10, 6, 3, 0); }
     }
 
     #streak-celebration::before {
       content: "";
       position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 50% 46%, rgba(255, 140, 32, 0.26), rgba(255, 64, 0, 0.1) 40%, transparent 70%);
+      inset: -12%;
+      background: radial-gradient(ellipse at 50% 58%, rgba(255, 138, 34, 0.3), rgba(255, 74, 0, 0.12) 38%, transparent 64%);
       opacity: 0;
     }
 
-    #streak-celebration.play::before { animation: streak-warmth 3.3s ease both; }
+    #streak-celebration.play::before {
+      animation: streak-ambient var(--streak-duration) ease both;
+    }
 
-    @keyframes streak-warmth {
-      0%, 15% { opacity: 0; }
-      40% { opacity: 1; }
-      80% { opacity: 0.7; }
+    @keyframes streak-ambient {
+      0%, 12% { opacity: 0; }
+      30% { opacity: 1; }
+      70% { opacity: 0.82; }
       100% { opacity: 0; }
     }
 
@@ -692,129 +695,129 @@
       z-index: 1;
       display: grid;
       justify-items: center;
-      gap: 4px;
-      color: #ffe6bd;
+      gap: 0;
+      color: #ffe9c9;
       font: 700 15px/1.2 system-ui, sans-serif;
       text-align: center;
+      transform-origin: 50% 70%;
     }
 
     #streak-celebration.play .streak-celebration-card {
-      animation: streak-card-in 0.72s cubic-bezier(0.16, 0.9, 0.28, 1.15) both;
+      animation: streak-card var(--streak-duration) cubic-bezier(0.2, 0.9, 0.3, 1.08) both;
     }
 
-    @keyframes streak-card-in {
-      0% { opacity: 0; transform: translateY(22px) scale(0.82); }
-      55% { opacity: 1; }
-      100% { opacity: 1; transform: none; }
+    @keyframes streak-card {
+      0% { opacity: 0; transform: translateY(28px) scale(0.86); }
+      11% { opacity: 1; transform: translateY(0) scale(1); }
+      82% { opacity: 1; transform: none; }
+      100% { opacity: 0; transform: scale(1.05); }
     }
 
     .streak-stage {
       position: relative;
       display: grid;
       place-items: center;
-      width: clamp(160px, 36vw, 224px);
-      height: clamp(160px, 36vw, 224px);
+      width: clamp(200px, 48vw, 280px);
+      height: clamp(200px, 48vw, 280px);
     }
 
-    .streak-glow {
+    .streak-bloom {
       position: absolute;
-      inset: 6%;
+      inset: -12%;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(255, 170, 60, 0.8), rgba(255, 88, 0, 0.32) 46%, transparent 72%);
-      filter: blur(12px);
+      background: radial-gradient(circle at 50% 62%, rgba(255, 152, 42, 0.9), rgba(255, 92, 0, 0.38) 44%, transparent 70%);
+      filter: blur(18px);
       opacity: 0;
+      transform: scale(0.78);
     }
 
-    #streak-celebration.play .streak-glow { animation: streak-glow 3.3s ease both; }
+    #streak-celebration.play .streak-bloom { animation: streak-bloom var(--streak-duration) ease both; }
 
-    @keyframes streak-glow {
-      0%, 16% { opacity: 0; }
-      30% { opacity: 0.9; }
-      44% { opacity: 0.55; }
-      58% { opacity: 0.82; }
-      72% { opacity: 0.6; }
-      100% { opacity: 0; }
+    @keyframes streak-bloom {
+      0%, 10% { opacity: 0; transform: scale(0.78); }
+      21% { opacity: 0.95; transform: scale(1.06); }
+      31% { opacity: 0.62; transform: scale(1); }
+      47% { opacity: 0.86; transform: scale(1.07); }
+      63% { opacity: 0.6; }
+      80% { opacity: 0.5; }
+      100% { opacity: 0; transform: scale(1.12); }
     }
 
     .streak-ring {
       position: absolute;
-      inset: 22%;
-      border: 2px solid rgba(255, 198, 122, 0.9);
+      inset: 26%;
+      border: 1px solid rgba(255, 205, 140, 0.55);
       border-radius: 50%;
       opacity: 0;
     }
 
     #streak-celebration.play .streak-ring {
-      animation: streak-ring 1.15s cubic-bezier(0.2, 0.7, 0.3, 1) 0.46s both;
+      animation: streak-ring 1.3s cubic-bezier(0.2, 0.6, 0.3, 1) 0.48s both;
     }
 
-    #streak-celebration.play .streak-ring-late { animation-delay: 0.64s; }
+    #streak-celebration.play .streak-ring-late { animation-delay: 0.72s; }
 
     @keyframes streak-ring {
-      0% { opacity: 0.9; transform: scale(0.2); }
-      65% { opacity: 0.25; }
-      100% { opacity: 0; transform: scale(2); }
+      0% { opacity: 0.55; transform: scale(0.34); }
+      100% { opacity: 0; transform: scale(2.05); }
     }
 
     #streak-flame {
       position: relative;
-      width: 58%;
+      width: 50%;
       height: auto;
+      filter: saturate(0) brightness(0.5);
       transform-origin: 50% 100%;
-      filter: grayscale(1) brightness(0.45);
     }
 
     #streak-celebration.play #streak-flame {
       animation:
-        streak-flame-rise 0.8s cubic-bezier(0.16, 0.9, 0.28, 1.15) both,
-        streak-flame-ignite 0.5s ease-out 0.48s both,
-        streak-flame-flicker 0.9s ease-in-out 1.3s infinite alternate;
+        streak-flame-enter 0.9s cubic-bezier(0.16, 0.9, 0.3, 1.1) both,
+        streak-flame-light 0.6s ease-out 0.5s both,
+        streak-flame-breathe 2.4s ease-in-out 1.1s infinite alternate;
     }
 
-    @keyframes streak-flame-rise {
-      0% { opacity: 0; transform: translateY(26px) scale(0.5); }
-      60% { opacity: 1; transform: translateY(0) scale(1.03); }
+    @keyframes streak-flame-enter {
+      0% { opacity: 0; transform: translateY(30px) scale(0.72); }
+      70% { opacity: 1; transform: translateY(0) scale(1.02); }
       100% { opacity: 1; transform: none; }
     }
 
-    @keyframes streak-flame-ignite {
-      from { filter: grayscale(1) brightness(0.45); }
-      to { filter: drop-shadow(0 0 24px rgba(255, 146, 36, 0.9)) drop-shadow(0 14px 46px rgba(255, 66, 0, 0.55)); }
+    @keyframes streak-flame-light {
+      from { filter: saturate(0) brightness(0.5); }
+      to { filter: saturate(1.05) brightness(1.02); }
     }
 
-    @keyframes streak-flame-flicker {
-      from { transform: scale(1) rotate(-1.6deg); }
-      to { transform: scale(1.06, 1.1) rotate(1.6deg); }
+    @keyframes streak-flame-breathe {
+      from { transform: scale(1) rotate(-0.8deg); }
+      to { transform: scale(1.035, 1.06) rotate(0.8deg); }
     }
 
-    #streak-flame .flame-outer { fill: #6d6864; }
-    #streak-flame .flame-mid { fill: #7c7570; }
-    #streak-flame .flame-inner { fill: #928b85; }
-
-    #streak-celebration.play .flame-outer { animation: streak-outer-lit 0.45s ease-out 0.5s both; }
-    #streak-celebration.play .flame-mid { animation: streak-mid-lit 0.45s ease-out 0.58s both; }
-    #streak-celebration.play .flame-inner { animation: streak-inner-lit 0.45s ease-out 0.66s both; }
-
-    @keyframes streak-outer-lit { from { fill: #6d6864; } to { fill: #ff5a00; } }
-    @keyframes streak-mid-lit { from { fill: #7c7570; } to { fill: #ff9310; } }
-    @keyframes streak-inner-lit { from { fill: #928b85; } to { fill: #ffe08a; } }
+    #streak-embers {
+      position: absolute;
+      top: -34%;
+      left: -32%;
+      width: 164%;
+      height: 152%;
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
 
     .streak-count {
       display: grid;
       justify-items: center;
-      gap: 1px;
-      margin: 0;
+      gap: 6px;
+      margin: 4px 0 0;
       transform-origin: 50% 60%;
     }
 
     #streak-celebration.play .streak-count {
-      animation: streak-count-pop 0.78s cubic-bezier(0.2, 1.1, 0.35, 1) 0.6s both;
+      animation: streak-count-in 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.1) 0.6s both;
     }
 
-    @keyframes streak-count-pop {
-      0% { transform: scale(0.9); }
-      62% { transform: scale(1.04); }
-      100% { transform: none; }
+    @keyframes streak-count-in {
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: none; }
     }
 
     .streak-count-digit {
@@ -822,73 +825,64 @@
       place-items: center;
       height: 1em;
       overflow: hidden;
-      font-size: clamp(62px, 17vw, 98px);
+      font-size: clamp(66px, 18vw, 104px);
       font-weight: 800;
-      line-height: 1;
-      color: #fff4de;
-      text-shadow: 0 0 26px rgba(255, 140, 40, 0.75);
+      line-height: 0.95;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      color: #fff6e6;
+      text-shadow: 0 12px 40px rgba(255, 110, 20, 0.45), 0 0 22px rgba(255, 170, 60, 0.35);
     }
 
     .streak-count-digit > span { grid-area: 1 / 1; }
 
-    #streak-count-new { opacity: 0; transform: translateY(105%) scale(0.7); }
+    #streak-count-new { opacity: 0; transform: translateY(115%); }
 
     #streak-celebration.play #streak-count-old {
-      animation: streak-num-out 0.4s cubic-bezier(0.55, 0, 0.8, 0.2) 0.62s both;
+      animation: streak-num-out 0.42s cubic-bezier(0.5, 0, 0.75, 0.2) 0.6s both;
     }
 
     #streak-celebration.play #streak-count-new {
-      animation: streak-num-in 0.8s cubic-bezier(0.16, 1.3, 0.32, 1) 0.62s both;
+      animation: streak-num-in 0.85s cubic-bezier(0.16, 1.25, 0.3, 1) 0.6s both;
     }
 
     @keyframes streak-num-out {
-      to { opacity: 0; transform: translateY(-110%) scale(0.66); }
+      to { opacity: 0; transform: translateY(-115%); filter: blur(6px); }
     }
 
     @keyframes streak-num-in {
-      0% { opacity: 0; transform: translateY(110%) scale(0.66); }
-      55% { opacity: 1; transform: translateY(-7%) scale(1.08); }
-      78% { transform: translateY(2%) scale(0.99); }
-      100% { opacity: 1; transform: none; }
+      0% { opacity: 0; transform: translateY(115%); filter: blur(10px); }
+      55% { opacity: 1; filter: blur(0); }
+      72% { transform: translateY(-4%) scale(1.03); }
+      100% { opacity: 1; transform: none; filter: blur(0); }
     }
 
     #streak-count-label {
-      font-size: 13px;
-      letter-spacing: 0.22em;
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
-      color: #ffd79a;
+      color: #f3c389;
       opacity: 0;
+    }
+
+    #streak-count-label::before {
+      content: "";
+      display: block;
+      width: 40px;
+      height: 1px;
+      margin: 0 auto 9px;
+      background: linear-gradient(90deg, transparent, rgba(255, 190, 120, 0.75), transparent);
     }
 
     #streak-celebration.play #streak-count-label {
-      animation: streak-label-in 0.62s ease-out 1.02s both;
+      animation: streak-label 0.7s ease-out 1s both;
     }
 
-    @keyframes streak-label-in {
-      from { opacity: 0; letter-spacing: 0.52em; transform: translateY(7px); }
-      to { opacity: 1; letter-spacing: 0.22em; transform: none; }
-    }
-
-    .streak-spark {
-      position: absolute;
-      left: 50%;
-      top: 62%;
-      width: var(--spark-size, 7px);
-      height: var(--spark-size, 7px);
-      border-radius: 50%;
-      background: var(--spark-color, #ffd166);
-      box-shadow: 0 0 12px var(--spark-color, #ffd166);
-      opacity: 0;
-      pointer-events: none;
-      animation: streak-spark-rise var(--spark-duration, 1.5s) cubic-bezier(0.25, 0.6, 0.4, 1) both;
-      animation-delay: var(--spark-delay, 0.5s);
-    }
-
-    @keyframes streak-spark-rise {
-      0% { opacity: 0; transform: translate(0, 0) scale(0.35); }
-      12% { opacity: 1; }
-      62% { opacity: 0.85; }
-      100% { opacity: 0; transform: translate(var(--spark-x, 0px), var(--spark-y, -170px)) scale(1.15); }
+    @keyframes streak-label {
+      from { opacity: 0; letter-spacing: 0.5em; transform: translateY(8px); }
+      to { opacity: 1; letter-spacing: 0.2em; transform: none; }
     }
 
     @media (max-width: 480px) {
@@ -903,20 +897,16 @@
       .daily-target,
       .daily-decoy { animation: none !important; transition: none !important; }
       .meowl-toast,
-      .meowl-toast.is-leaving,
-      .streak-spark { animation: none !important; }
+      .meowl-toast.is-leaving { animation: none !important; }
       #streak-celebration.play {
-        background: rgba(8, 5, 2, 0.86) !important;
+        background-color: rgba(10, 6, 3, 0.88) !important;
         animation: none !important;
       }
       #streak-celebration.play::before { animation: none !important; opacity: 0 !important; }
       #streak-celebration.play .streak-celebration-card,
-      #streak-celebration.play .streak-glow,
+      #streak-celebration.play .streak-bloom,
       #streak-celebration.play .streak-ring,
       #streak-celebration.play #streak-flame,
-      #streak-celebration.play .flame-outer,
-      #streak-celebration.play .flame-mid,
-      #streak-celebration.play .flame-inner,
       #streak-celebration.play .streak-count,
       #streak-celebration.play #streak-count-old,
       #streak-celebration.play #streak-count-new,
@@ -1009,14 +999,31 @@
   <div id="streak-celebration" role="status" aria-live="polite" hidden>
     <div class="streak-celebration-card">
       <div class="streak-stage">
-        <span class="streak-glow" aria-hidden="true"></span>
+        <span class="streak-bloom" aria-hidden="true"></span>
         <span class="streak-ring" aria-hidden="true"></span>
         <span class="streak-ring streak-ring-late" aria-hidden="true"></span>
-        <svg id="streak-flame" viewBox="0 0 120 160" aria-hidden="true">
-          <path class="flame-outer" d="M60 6 C84 44 100 62 100 94 A40 40 0 0 1 20 94 C20 62 36 44 60 6 Z"></path>
-          <path class="flame-mid" d="M60 40 C78 70 88 84 88 100 A28 28 0 0 1 32 100 C32 84 44 70 60 40 Z"></path>
-          <path class="flame-inner" d="M60 76 C70 90 76 96 76 106 A16 16 0 0 1 44 106 C44 96 50 90 60 76 Z"></path>
+        <svg id="streak-flame" viewBox="0 0 200 260" aria-hidden="true">
+          <defs>
+            <linearGradient id="streak-outer-gradient" x1="0.5" y1="1" x2="0.5" y2="0">
+              <stop offset="0" stop-color="#ff3d00"></stop>
+              <stop offset="0.48" stop-color="#ff6a00"></stop>
+              <stop offset="1" stop-color="#ffae3d"></stop>
+            </linearGradient>
+            <linearGradient id="streak-mid-gradient" x1="0.5" y1="1" x2="0.5" y2="0.1">
+              <stop offset="0" stop-color="#ff9d2e"></stop>
+              <stop offset="0.6" stop-color="#ffc247"></stop>
+              <stop offset="1" stop-color="#ffe07a"></stop>
+            </linearGradient>
+            <linearGradient id="streak-core-gradient" x1="0.5" y1="1" x2="0.5" y2="0">
+              <stop offset="0" stop-color="#ffe9b0"></stop>
+              <stop offset="0.6" stop-color="#fff8e3"></stop>
+            </linearGradient>
+          </defs>
+          <path class="flame-outer" fill="url(#streak-outer-gradient)" d="M100 6 C112 48 138 70 150 104 C160 132 158 168 142 196 C128 220 114 232 100 238 C86 232 72 220 58 196 C42 168 40 132 50 104 C62 70 88 48 100 6 Z"></path>
+          <path class="flame-mid" fill="url(#streak-mid-gradient)" d="M100 62 C110 92 128 108 136 132 C143 154 140 182 128 202 C118 218 108 226 100 230 C92 226 82 218 72 202 C60 182 57 154 64 132 C72 108 90 92 100 62 Z"></path>
+          <path class="flame-core" fill="url(#streak-core-gradient)" d="M100 128 C106 148 118 158 121 174 C124 190 115 208 100 214 C85 208 76 190 79 174 C82 158 94 148 100 128 Z"></path>
         </svg>
+        <canvas id="streak-embers" aria-hidden="true"></canvas>
       </div>
       <p class="streak-count">
         <span class="streak-count-digit"><span id="streak-count-old">0</span><span id="streak-count-new">1</span></span>
