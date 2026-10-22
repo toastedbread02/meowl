@@ -268,6 +268,202 @@
       100% { transform: translate(-120%, 0); }
     }
 
+    #daily-challenge-launch {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      z-index: 6;
+      padding: 12px 16px;
+      border: 3px solid #311b05;
+      border-radius: 14px;
+      background: #ffe04a;
+      color: #271500;
+      box-shadow: 0 4px 0 #9b5c12;
+      font: 800 16px/1.1 system-ui, sans-serif;
+      cursor: pointer;
+    }
+
+    #daily-challenge-launch:hover { transform: translateY(-2px); }
+    #daily-challenge-launch:active { transform: translateY(2px); box-shadow: 0 2px 0 #9b5c12; }
+
+    #daily-challenge-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 9;
+      background: rgba(12, 7, 18, 0.78);
+    }
+
+    #daily-challenge-panel {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      z-index: 10;
+      box-sizing: border-box;
+      width: min(560px, calc(100vw - 24px));
+      max-height: 90vh;
+      max-height: min(90dvh, 820px);
+      overflow: auto;
+      padding: 20px;
+      border: 4px solid #311b05;
+      border-radius: 18px;
+      background: #fff8dc;
+      color: #271500;
+      box-shadow: 0 10px 0 rgba(0, 0, 0, 0.3);
+      font: 16px/1.4 system-ui, sans-serif;
+      transform: translate(-50%, -50%);
+    }
+
+    #daily-challenge-panel[hidden],
+    #daily-challenge-backdrop[hidden],
+    #daily-challenge-game[hidden],
+    #daily-challenge-result[hidden] { display: none; }
+
+    .daily-challenge-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .daily-challenge-heading h2 { margin: 0 0 8px; font-size: 1.45rem; }
+    .daily-challenge-heading p { margin: 0 0 12px; }
+
+    #daily-challenge-close,
+    #daily-challenge-start {
+      min-height: 44px;
+      border: 2px solid #311b05;
+      border-radius: 10px;
+      padding: 8px 12px;
+      background: #ffd94f;
+      color: #271500;
+      font: 750 16px/1.2 system-ui, sans-serif;
+      cursor: pointer;
+    }
+
+    #daily-challenge-close { flex: 0 0 auto; }
+    #daily-challenge-start { display: block; width: 100%; margin-top: 12px; }
+    #daily-challenge-start:focus-visible,
+    #daily-challenge-close:focus-visible,
+    #daily-challenge-panel button:focus-visible,
+    #daily-challenge-launch:focus-visible { outline: 3px solid #325dff; outline-offset: 3px; }
+
+    .daily-challenge-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0 14px;
+    }
+
+    .daily-challenge-stats span,
+    #daily-challenge-status {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f0dfad;
+      font-weight: 700;
+    }
+
+    #daily-challenge-status { display: inline-block; }
+
+    #daily-challenge-hud {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 8px 0;
+      font-weight: 800;
+    }
+
+    #daily-challenge-progress { width: 100%; height: 14px; accent-color: #ef9d24; }
+
+    #daily-challenge-arena {
+      position: relative;
+      height: clamp(190px, 34vh, 310px);
+      margin-top: 12px;
+      overflow: hidden;
+      border: 3px solid #5b3517;
+      border-radius: 14px;
+      background: linear-gradient(#bbebff, #fff2a8 82%, #83c45a 82%);
+      touch-action: none;
+    }
+
+    .daily-target,
+    .daily-decoy {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .daily-target img,
+    .daily-decoy img,
+    .daily-player,
+    .daily-hazard img { display: block; width: 100%; height: 100%; object-fit: contain; }
+
+    .daily-target { width: 78px; height: 86px; }
+    .daily-target img { filter: drop-shadow(1px 2px 1px #31210d); }
+    .daily-target:active { scale: 0.9; }
+    .daily-player {
+      position: absolute;
+      bottom: 2px;
+      left: 50%;
+      width: 54px;
+      height: 60px;
+      transform: translateX(-50%);
+    }
+
+    .daily-hazard { position: absolute; }
+    .daily-decoy { width: 48px; height: 54px; animation: daily-decoy-wiggle 0.45s ease-in-out infinite alternate; }
+
+    .daily-memory-pads {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      height: 100%;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+
+    .daily-memory-pad {
+      min-height: 60px;
+      border: 3px solid #43280d;
+      border-radius: 14px;
+      background: #86c6ff;
+      font-size: 25px;
+      cursor: pointer;
+    }
+
+    .daily-memory-pad:nth-child(2) { background: #ff9778; }
+    .daily-memory-pad:nth-child(3) { background: #a4d66c; }
+    .daily-memory-pad:nth-child(4) { background: #d1a5ff; }
+    .daily-memory-pad.lit { filter: brightness(1.45); box-shadow: 0 0 18px #fff; }
+
+    #daily-challenge-result {
+      margin: 12px 0 0;
+      padding: 12px;
+      border: 2px dashed #805521;
+      border-radius: 12px;
+      background: #fff0a8;
+      font-weight: 800;
+    }
+
+    @keyframes daily-decoy-wiggle {
+      to { rotate: 8deg; scale: 1.08; }
+    }
+
+    @media (max-width: 480px) {
+      #daily-challenge-launch { bottom: 10px; left: 10px; padding: 10px 12px; font-size: 14px; }
+      #daily-challenge-panel { padding: 14px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #daily-challenge-launch,
+      .daily-target,
+      .daily-decoy { animation: none !important; transition: none !important; }
+    }
+
   </style>
 </head>
 <body>
@@ -276,6 +472,37 @@
   <section id="event-menu" aria-label="Event menu" hidden>
     <button type="button" data-trigger-event="disco">Start Disco</button>
     <button type="button" data-trigger-event="admin">Start Admin Abuse</button>
+  </section>
+  <button id="daily-challenge-launch" type="button">🎯 Daily Challenge</button>
+  <div id="daily-challenge-backdrop" hidden></div>
+  <section id="daily-challenge-panel" role="dialog" aria-modal="true" aria-labelledby="daily-challenge-title" tabindex="-1" hidden>
+    <div class="daily-challenge-heading">
+      <div>
+        <h2 id="daily-challenge-title">🎯 Daily Challenge</h2>
+        <p id="daily-challenge-date"></p>
+      </div>
+      <button id="daily-challenge-close" type="button" aria-label="Close challenge">✕</button>
+    </div>
+    <div class="daily-challenge-stats" aria-live="polite">
+      <span id="daily-challenge-points">Points: 0</span>
+      <span id="daily-challenge-streak">Streak: 0 days</span>
+      <span id="daily-challenge-best">Best: —</span>
+      <span id="daily-challenge-status">Not completed</span>
+    </div>
+    <h3 id="daily-challenge-name"></h3>
+    <p id="daily-challenge-instructions"></p>
+    <p id="daily-challenge-reward"></p>
+    <button id="daily-challenge-start" type="button">Start Challenge</button>
+    <div id="daily-challenge-game" hidden>
+      <div id="daily-challenge-hud">
+        <span id="daily-challenge-clock"></span>
+        <span id="daily-challenge-score"></span>
+      </div>
+      <progress id="daily-challenge-progress" max="1" value="0" aria-label="Challenge progress"></progress>
+      <p id="daily-challenge-game-tip" aria-live="polite"></p>
+      <div id="daily-challenge-arena"></div>
+    </div>
+    <p id="daily-challenge-result" aria-live="assertive" hidden></p>
   </section>
   <img id="meowl-image" src="meowl.png" alt="Meowl">
   <svg id="crack-lines" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true" hidden>
@@ -293,6 +520,7 @@
   <audio id="admin-audio" src="meowlwow.mp3" loop preload="auto"></audio>
   <audio id="disco-audio" src="disco.mp3" preload="auto"></audio>
   <canvas id="floating-meowls" aria-hidden="true"></canvas>
+  <script src="daily-challenge.js"></script>
   <script>
     const audio = document.getElementById("meowl-audio");
     const image = document.getElementById("meowl-image");
