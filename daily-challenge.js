@@ -17,7 +17,12 @@
   const streakLabel = document.getElementById("daily-challenge-streak");
   const bestLabel = document.getElementById("daily-challenge-best");
   const statusLabel = document.getElementById("daily-challenge-status");
+  const levelLabel = document.getElementById("daily-challenge-level");
+  const xpLabel = document.getElementById("daily-challenge-xp");
+  const xpProgress = document.getElementById("daily-challenge-xp-progress");
+  const achievementList = document.getElementById("daily-challenge-achievement-list");
   const game = document.getElementById("daily-challenge-game");
+  const gameCloseButton = document.getElementById("daily-challenge-close-game");
   const clockLabel = document.getElementById("daily-challenge-clock");
   const scoreLabel = document.getElementById("daily-challenge-score");
   const progressBar = document.getElementById("daily-challenge-progress");
@@ -25,6 +30,16 @@
   const arena = document.getElementById("daily-challenge-arena");
   const result = document.getElementById("daily-challenge-result");
   const meowlSource = "meowl3.png";
+  const XP_PER_LEVEL = 250;
+  const achievements = [
+    { id: "first-win", name: "First Paw Forward", description: "Complete a daily challenge", xp: 25, test: (p) => p.totalCompletions >= 1 },
+    { id: "five-wins", name: "Meowl Regular", description: "Complete five daily challenges", xp: 50, test: (p) => p.totalCompletions >= 5 },
+    { id: "ten-wins", name: "Meowl Legend", description: "Complete ten daily challenges", xp: 100, test: (p) => p.totalCompletions >= 10 },
+    { id: "three-streak", name: "Three Day Streak", description: "Complete challenges three days in a row", xp: 50, test: (p) => p.streak >= 3 },
+    { id: "seven-streak", name: "Weekly Whiskers", description: "Complete challenges seven days in a row", xp: 100, test: (p) => p.streak >= 7 },
+    { id: "memory-cat", name: "Memory Cat", description: "Win a memory challenge", xp: 35, test: (p, run) => run.challenge.mode === "memory" },
+    { id: "chaos-survivor", name: "Chaos Survivor", description: "Survive a dodge challenge", xp: 35, test: (p, run) => run.challenge.mode === "dodge" }
+  ];
 
   const challenges = [
     { id: "survival", name: "Meowl Survival", mode: "dodge", duration: 20, speed: 2.2, spawn: 900, instructions: "Dodge the falling Meowl chaos until the timer runs out. Use ← → or A/D, or drag Meowl around the arena." },
@@ -70,7 +85,7 @@
   let currentDate = localDateKey();
 
   function emptyProgress() {
-    return { points: 0, streak: 0, lastCompletedDate: "", days: {} };
+    return { points: 0, xp: 0, totalCompletions: 0, achievements: [], streak: 0, lastCompletedDate: "", days: {} };
   }
 
   function localDateKey(date = new Date()) {
@@ -101,6 +116,9 @@
       if (!parsed || typeof parsed !== "object") return cachedProgress;
       return {
         points: Number.isFinite(parsed.points) ? Math.max(0, parsed.points) : 0,
+        xp: Number.isFinite(parsed.xp) ? Math.max(0, parsed.xp) : 0,
+        totalCompletions: Number.isFinite(parsed.totalCompletions) ? Math.max(0, parsed.totalCompletions) : 0,
+        achievements: Array.isArray(parsed.achievements) ? parsed.achievements : [],
         streak: Number.isFinite(parsed.streak) ? Math.max(0, parsed.streak) : 0,
         lastCompletedDate: typeof parsed.lastCompletedDate === "string" ? parsed.lastCompletedDate : "",
         days: parsed.days && typeof parsed.days === "object" ? parsed.days : {}
@@ -137,12 +155,23 @@
     dateLabel.textContent = prettyDate;
     nameLabel.textContent = challenge.name;
     instructionsLabel.textContent = challenge.instructions;
-    rewardLabel.textContent = `Reward: ${REWARD_POINTS} points. Replay any time to beat your best; points are awarded once per day.`;
+    rewardLabel.textContent = `Reward: ${REWARD_POINTS} points + 50 XP on your first clear today. Achievements grant bonus XP; replays can improve your best.`;
     pointsLabel.textContent = `Points: ${progress.points}`;
     streakLabel.textContent = `Streak: ${progress.streak} ${progress.streak === 1 ? "day" : "days"}`;
     bestLabel.textContent = day?.bestResult !== null && Number.isFinite(day?.bestResult)
       ? `Best: ${day.bestResult}` : "Best: —";
     statusLabel.textContent = day?.completed ? "✅ Completed today" : "Not completed";
+    const level = Math.floor(progress.xp / XP_PER_LEVEL) + 1;
+    levelLabel.textContent = `Level ${level}`;
+    xpLabel.textContent = `${progress.xp % XP_PER_LEVEL} / ${XP_PER_LEVEL} XP`;
+    xpProgress.value = progress.xp % XP_PER_LEVEL;
+    achievementList.replaceChildren();
+    achievements.forEach((achievement) => {
+      const item = document.createElement("li");
+      const earned = progress.achievements.includes(achievement.id);
+      item.textContent = `${earned ? "✓" : "○"} ${achievement.name} — ${achievement.description}${earned ? ` (+${achievement.xp} XP)` : ""}`;
+      achievementList.append(item);
+    });
     launcher.setAttribute("aria-label", `Daily Challenge: ${challenge.name}`);
   }
 
@@ -193,6 +222,9 @@
     refreshChallengeInfo();
     const challenge = dailyChallengeFor(currentDate);
     resetGameDisplay();
+    panel.hidden = true;
+    backdrop.hidden = true;
+    game.hidden = false;
     const runtime = {
       challenge,
       startedAt: Date.now(),
@@ -519,6 +551,9 @@
     runtime.finished = true;
     cleanupRuntime(runtime);
     activeChallenge = null;
+    game.hidden = true;
+    backdrop.hidden = false;
+    panel.hidden = false;
     gameTip.textContent = success
       ? winMessages[Math.floor(Math.random() * winMessages.length)]
       : failMessages[Math.floor(Math.random() * failMessages.length)];
@@ -530,6 +565,7 @@
     startButton.hidden = false;
     startButton.textContent = "Try Again";
     refreshChallengeInfo();
+    startButton.focus();
   }
 
   function recordResult(runtime, success, score) {
@@ -547,15 +583,28 @@
     day.lastScore = score;
     if (Number.isFinite(score) && (day.bestResult === null || score > day.bestResult)) day.bestResult = score;
     let earnedNow = false;
+    let xpEarned = 0;
     if (success && !day.completed) {
       day.completed = true;
       day.completedAt = new Date().toISOString();
       day.pointsAwarded = REWARD_POINTS;
       progress.points += REWARD_POINTS;
+      progress.xp += 50;
+      xpEarned += 50;
+      progress.totalCompletions += 1;
       if (progress.lastCompletedDate === dateOffset(date, -1)) progress.streak += 1;
       else if (progress.lastCompletedDate !== date) progress.streak = 1;
       progress.lastCompletedDate = date;
       earnedNow = true;
+    }
+    if (success) {
+      for (const achievement of achievements) {
+        if (!progress.achievements.includes(achievement.id) && achievement.test(progress, runtime)) {
+          progress.achievements.push(achievement.id);
+          progress.xp += achievement.xp;
+          xpEarned += achievement.xp;
+        }
+      }
     }
     progress.days[date] = day;
     const oldDates = Object.keys(progress.days).sort();
@@ -563,7 +612,7 @@
     saveProgress(progress);
     if (success) {
       result.textContent = earnedNow
-        ? `${gameTip.textContent} +${REWARD_POINTS} points! Best result: ${day.bestResult}.`
+        ? `${gameTip.textContent} +${REWARD_POINTS} points and +${xpEarned} XP! Best result: ${day.bestResult}.`
         : `${gameTip.textContent} ${day.completed ? "Today's points are already banked." : ""} Best result: ${day.bestResult}.`;
     } else {
       result.textContent = `${gameTip.textContent} Result: ${score}. Best: ${day.bestResult ?? "—"}.`;
@@ -590,8 +639,7 @@
   closeButton.addEventListener("click", closePanel);
   backdrop.addEventListener("click", closePanel);
   startButton.addEventListener("click", startChallenge);
-  panel.addEventListener("click", (event) => {
-    if (event.target === backdrop) closePanel();
+  arena.addEventListener("click", (event) => {
     const target = event.target.closest("[data-daily-action]");
     if (target?.dataset.dailyAction === "target") handleTargetClick();
     if (target?.dataset.dailyAction === "decoy" && activeChallenge) {
@@ -601,25 +649,16 @@
     if (memoryPad) handleMemoryInput(Number(memoryPad.dataset.dailyPad));
   });
 
-  panel.addEventListener("keydown", (event) => {
+  document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
-      event.preventDefault();
-      closePanel();
-      return;
-    }
-    if (event.key !== "Tab") return;
-    const focusable = [...panel.querySelectorAll("button:not([disabled]):not([hidden])")];
-    if (!focusable.length) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
+      if (!game.hidden) {
+        event.preventDefault();
+        closePanel();
+      }
     }
   });
+
+  gameCloseButton.addEventListener("click", closePanel);
 
   refreshChallengeInfo();
   scheduleDateRollover();

@@ -273,24 +273,22 @@
       bottom: 16px;
       left: 16px;
       z-index: 6;
-      padding: 12px 16px;
-      border: 3px solid #311b05;
-      border-radius: 14px;
-      background: #ffe04a;
-      color: #271500;
-      box-shadow: 0 4px 0 #9b5c12;
-      font: 800 16px/1.1 system-ui, sans-serif;
+      padding: 10px 14px;
+      border: 1px solid #222;
+      border-radius: 6px;
+      background: #fff;
+      color: #111;
+      font: 600 15px/1.1 system-ui, sans-serif;
       cursor: pointer;
     }
 
-    #daily-challenge-launch:hover { transform: translateY(-2px); }
-    #daily-challenge-launch:active { transform: translateY(2px); box-shadow: 0 2px 0 #9b5c12; }
+    #daily-challenge-launch:hover { background: #eee; }
 
     #daily-challenge-backdrop {
       position: fixed;
       inset: 0;
       z-index: 9;
-      background: rgba(12, 7, 18, 0.78);
+      background: rgba(0, 0, 0, 0.65);
     }
 
     #daily-challenge-panel {
@@ -299,16 +297,15 @@
       left: 50%;
       z-index: 10;
       box-sizing: border-box;
-      width: min(560px, calc(100vw - 24px));
-      max-height: 90vh;
-      max-height: min(90dvh, 820px);
+      width: min(520px, calc(100vw - 24px));
+      max-height: min(92dvh, 820px);
       overflow: auto;
       padding: 20px;
-      border: 4px solid #311b05;
-      border-radius: 18px;
-      background: #fff8dc;
-      color: #271500;
-      box-shadow: 0 10px 0 rgba(0, 0, 0, 0.3);
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      color: #111;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
       font: 16px/1.4 system-ui, sans-serif;
       transform: translate(-50%, -50%);
     }
@@ -317,6 +314,64 @@
     #daily-challenge-backdrop[hidden],
     #daily-challenge-game[hidden],
     #daily-challenge-result[hidden] { display: none; }
+
+    #daily-challenge-game {
+      position: fixed;
+      inset: 0;
+      z-index: 12;
+      color: white;
+      font: 600 16px/1.4 system-ui, sans-serif;
+      pointer-events: none;
+    }
+
+    #daily-challenge-game button,
+    #daily-challenge-game progress { pointer-events: auto; }
+
+    #daily-challenge-game #daily-challenge-hud {
+      position: absolute;
+      top: max(12px, env(safe-area-inset-top));
+      left: 12px;
+      right: 78px;
+      z-index: 2;
+      box-sizing: border-box;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, .68);
+    }
+
+    #daily-challenge-close-game {
+      position: absolute;
+      top: max(12px, env(safe-area-inset-top));
+      right: 12px;
+      z-index: 3;
+      min-height: 40px;
+      padding: 6px 12px;
+      border: 1px solid #222;
+      border-radius: 5px;
+      background: white;
+      color: #111;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+
+    #daily-challenge-game #daily-challenge-progress {
+      position: absolute;
+      top: 66px;
+      left: 12px;
+      width: calc(100% - 24px);
+      z-index: 2;
+    }
+
+    #daily-challenge-game #daily-challenge-game-tip {
+      position: absolute;
+      top: 78px;
+      left: 12px;
+      right: 12px;
+      text-align: center;
+      text-shadow: 0 1px 4px #000;
+    }
 
     .daily-challenge-heading {
       display: flex;
@@ -331,12 +386,12 @@
     #daily-challenge-close,
     #daily-challenge-start {
       min-height: 44px;
-      border: 2px solid #311b05;
-      border-radius: 10px;
+      border: 1px solid #222;
+      border-radius: 5px;
       padding: 8px 12px;
-      background: #ffd94f;
-      color: #271500;
-      font: 750 16px/1.2 system-ui, sans-serif;
+      background: #f3f3f3;
+      color: #111;
+      font: 600 16px/1.2 system-ui, sans-serif;
       cursor: pointer;
     }
 
@@ -357,9 +412,9 @@
     .daily-challenge-stats span,
     #daily-challenge-status {
       padding: 6px 10px;
-      border-radius: 999px;
-      background: #f0dfad;
-      font-weight: 700;
+      border-radius: 4px;
+      background: #f1f1f1;
+      font-weight: 600;
     }
 
     #daily-challenge-status { display: inline-block; }
@@ -376,13 +431,18 @@
 
     #daily-challenge-arena {
       position: relative;
-      height: clamp(190px, 34vh, 310px);
-      margin-top: 12px;
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      margin: 0;
       overflow: hidden;
-      border: 3px solid #5b3517;
-      border-radius: 14px;
-      background: linear-gradient(#bbebff, #fff2a8 82%, #83c45a 82%);
+      border: 0;
+      border-radius: 0;
+      background: transparent;
       touch-action: none;
+      pointer-events: auto;
     }
 
     .daily-target,
@@ -418,6 +478,12 @@
     .daily-decoy { width: 48px; height: 54px; animation: daily-decoy-wiggle 0.45s ease-in-out infinite alternate; }
 
     .daily-memory-pads {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: min(420px, 82vw);
+      height: min(420px, 58vh);
+      transform: translate(-50%, -50%);
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
@@ -428,8 +494,8 @@
 
     .daily-memory-pad {
       min-height: 60px;
-      border: 3px solid #43280d;
-      border-radius: 14px;
+      border: 2px solid #fff;
+      border-radius: 8px;
       background: #86c6ff;
       font-size: 25px;
       cursor: pointer;
@@ -443,11 +509,18 @@
     #daily-challenge-result {
       margin: 12px 0 0;
       padding: 12px;
-      border: 2px dashed #805521;
-      border-radius: 12px;
-      background: #fff0a8;
-      font-weight: 800;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background: #f7f7f7;
+      font-weight: 600;
     }
+
+    .daily-xp-row { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
+    .daily-xp-row progress { flex: 1; height: 12px; accent-color: #333; }
+    #daily-challenge-achievements { margin-top: 14px; padding-top: 10px; border-top: 1px solid #ddd; }
+    #daily-challenge-achievements h3 { margin: 0 0 6px; font-size: 1rem; }
+    #daily-challenge-achievements ul { margin: 0; padding-left: 20px; }
+    #daily-challenge-achievements li { margin: 3px 0; }
 
     @keyframes daily-decoy-wiggle {
       to { rotate: 8deg; scale: 1.08; }
@@ -489,21 +562,21 @@
       <span id="daily-challenge-best">Best: —</span>
       <span id="daily-challenge-status">Not completed</span>
     </div>
+    <div class="daily-xp-row"><strong id="daily-challenge-level">Level 1</strong><span id="daily-challenge-xp">0 / 250 XP</span><progress id="daily-challenge-xp-progress" max="250" value="0" aria-label="Progress to next level"></progress></div>
+    <div id="daily-challenge-achievements"><h3>Achievements</h3><ul id="daily-challenge-achievement-list"></ul></div>
     <h3 id="daily-challenge-name"></h3>
     <p id="daily-challenge-instructions"></p>
     <p id="daily-challenge-reward"></p>
     <button id="daily-challenge-start" type="button">Start Challenge</button>
-    <div id="daily-challenge-game" hidden>
-      <div id="daily-challenge-hud">
-        <span id="daily-challenge-clock"></span>
-        <span id="daily-challenge-score"></span>
-      </div>
-      <progress id="daily-challenge-progress" max="1" value="0" aria-label="Challenge progress"></progress>
-      <p id="daily-challenge-game-tip" aria-live="polite"></p>
-      <div id="daily-challenge-arena"></div>
-    </div>
     <p id="daily-challenge-result" aria-live="assertive" hidden></p>
   </section>
+  <div id="daily-challenge-game" hidden>
+    <div id="daily-challenge-hud"><span id="daily-challenge-clock"></span><span id="daily-challenge-score"></span></div>
+    <button id="daily-challenge-close-game" type="button" aria-label="Exit challenge">Exit</button>
+    <progress id="daily-challenge-progress" max="1" value="0" aria-label="Challenge progress"></progress>
+    <p id="daily-challenge-game-tip" aria-live="polite"></p>
+    <div id="daily-challenge-arena" aria-label="Full screen Daily Challenge play area"></div>
+  </div>
   <img id="meowl-image" src="meowl.png" alt="Meowl">
   <svg id="crack-lines" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true" hidden>
     <path id="crack-line-one-shadow" class="crack-shadow" pathLength="1" d="M 1000 468 L 928 501 L 854 452 L 779 482 L 708 433 L 629 478 L 554 444 L 481 503 L 402 459 L 326 512 L 249 469 L 175 526 L 102 482 L 0 534"></path>
@@ -876,11 +949,21 @@
 
     function finishCrackRebuild() {
       if (!crackingOpenActive || !crackRebuilding) return;
+      clearTimeout(crackingIdleTimer);
+      clearTimeout(crackTextTimer);
+      clearTimeout(crackRebuildStartTimer);
       clearTimeout(crackRebuildTimer);
       cancelAnimationFrame(crackShatterFrame);
+      crackingIdleTimer = null;
+      crackTextTimer = null;
+      crackRebuildStartTimer = null;
+      crackRebuildTimer = null;
+      crackShatterFrame = 0;
       crackRebuilding = false;
       crackShards.hidden = true;
       crackContext.clearRect(0, 0, crackShards.width, crackShards.height);
+      crackLines.hidden = true;
+      crackLines.classList.remove("first-crack", "second-crack");
       rebuildWorkers.hidden = true;
       rebuildWorkers.replaceChildren();
       document.body.classList.remove("cracking-open");
