@@ -354,7 +354,8 @@
     #daily-profile-achievements summary { cursor: pointer; }
 
     #daily-profile-open,
-    #meowl-friends-open {
+    #meowl-friends-open,
+    #meowl-settings-open {
       position: fixed;
       right: 14px;
       z-index: 13;
@@ -370,6 +371,7 @@
     #daily-profile-open { max-width: min(48vw, 230px); overflow: hidden; }
     #daily-profile-summary-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     #meowl-friends-open { bottom: 62px; }
+    #meowl-settings-open { bottom: 110px; }
     #daily-profile-small-avatar { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
     #daily-profile-small-avatar[hidden],
     #daily-profile-avatar-preview[hidden] { display: none; }
@@ -913,10 +915,129 @@
       to { opacity: 1; letter-spacing: 0.2em; transform: none; }
     }
 
+    #meowl-settings-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      background: rgba(0, 0, 0, .65);
+    }
+
+    #meowl-settings-panel {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      z-index: 21;
+      box-sizing: border-box;
+      width: min(400px, calc(100vw - 24px));
+      max-height: 90dvh;
+      overflow: auto;
+      padding: 16px;
+      border: 1px solid #bbb;
+      background: #fff;
+      color: #111;
+      font: 16px/1.4 system-ui, sans-serif;
+      transform: translate(-50%, -50%);
+    }
+
+    #meowl-settings-backdrop[hidden],
+    #meowl-settings-panel[hidden] { display: none; }
+
+    #meowl-settings-panel button {
+      min-height: 40px;
+      padding: 7px 12px;
+      border: 1px solid #222;
+      border-radius: 3px;
+      background: #eee;
+      color: #111;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .meowl-setting {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #ddd;
+    }
+
+    .meowl-setting-text { display: grid; gap: 4px; }
+    .meowl-setting-text strong { font-size: 15px; }
+    .meowl-setting-text span { color: #555; font-size: 13px; line-height: 1.4; }
+
+    .meowl-switch {
+      position: relative;
+      flex: 0 0 auto;
+      width: 54px;
+      height: 30px !important;
+      min-height: 30px !important;
+      box-sizing: border-box;
+      padding: 0 !important;
+      border: 1px solid #6b6b6b !important;
+      border-radius: 999px;
+      background: #d9d9d9;
+      cursor: pointer;
+      transition: background-color 0.16s ease, border-color 0.16s ease;
+    }
+
+    .meowl-switch::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      box-sizing: border-box;
+      border: 1px solid #6b6b6b;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.16s ease;
+    }
+
+    .meowl-switch[aria-checked="true"] {
+      border-color: #14532d !important;
+      background: #2f9e44;
+    }
+
+    #meowl-settings-panel .meowl-switch { background: #d9d9d9; }
+    #meowl-settings-panel .meowl-switch[aria-checked="true"] { background: #2f9e44; }
+
+    .meowl-switch[aria-checked="true"]::after {
+      border-color: #14532d;
+      transform: translateX(24px);
+    }
+
+    .meowl-switch:focus-visible { outline: 3px solid #325dff; outline-offset: 3px; }
+
+    body.no-ui-mode #daily-challenge-launch,
+    body.no-ui-mode #daily-profile-open,
+    body.no-ui-mode #meowl-friends-open,
+    body.no-ui-mode #meowl-settings-open,
+    body.no-ui-mode #event-backdrop,
+    body.no-ui-mode #event-menu,
+    body.no-ui-mode #daily-challenge-backdrop,
+    body.no-ui-mode #daily-challenge-panel,
+    body.no-ui-mode #daily-challenge-game,
+    body.no-ui-mode #daily-welcome-backdrop,
+    body.no-ui-mode #daily-welcome-panel,
+    body.no-ui-mode #daily-profile-backdrop,
+    body.no-ui-mode #daily-profile-panel,
+    body.no-ui-mode #meowl-friends-backdrop,
+    body.no-ui-mode #meowl-friends-panel,
+    body.no-ui-mode #meowl-settings-backdrop,
+    body.no-ui-mode #meowl-settings-panel,
+    body.no-ui-mode #meowl-toast-stack,
+    body.no-ui-mode #streak-celebration {
+      display: none !important;
+    }
+
     @media (max-width: 480px) {
       #daily-challenge-launch { bottom: 10px; left: 10px; padding: 10px 12px; font-size: 14px; }
       #daily-profile-open { right: 10px; bottom: 10px; }
       #meowl-friends-open { right: 10px; bottom: 56px; }
+      #meowl-settings-open { right: 10px; bottom: 102px; }
       #daily-challenge-panel { padding: 14px; }
     }
 
@@ -926,6 +1047,8 @@
       .daily-decoy { animation: none !important; transition: none !important; }
       .meowl-toast,
       .meowl-toast.is-leaving { animation: none !important; }
+      .meowl-switch,
+      .meowl-switch::after { transition: none !important; }
       #streak-celebration.play {
         background-color: rgba(10, 6, 3, 0.88) !important;
         animation: none !important;
@@ -956,7 +1079,19 @@
   </section>
   <button id="daily-challenge-launch" type="button">🎯 Daily Challenge</button>
   <button id="meowl-friends-open" type="button">Friends</button>
+  <button id="meowl-settings-open" type="button">⚙ Settings</button>
   <button id="daily-profile-open" type="button"><img id="daily-profile-small-avatar" alt="" hidden><span id="daily-profile-summary-name">Profile</span></button>
+  <div id="meowl-settings-backdrop" hidden></div>
+  <section id="meowl-settings-panel" role="dialog" aria-modal="true" aria-labelledby="meowl-settings-title" tabindex="-1" hidden>
+    <div class="daily-profile-heading"><h2 id="meowl-settings-title">Settings</h2><button id="meowl-settings-close" type="button">Close</button></div>
+    <div class="meowl-setting">
+      <div class="meowl-setting-text">
+        <strong id="meowl-settings-no-ui-label">No UI mode</strong>
+        <span id="meowl-settings-no-ui-description">Hides the buttons, popups and achievement toasts, leaving just the Meowl and its banner. Your XP and achievements still count. Refresh the page to turn it off.</span>
+      </div>
+      <button id="meowl-settings-no-ui" type="button" role="switch" aria-checked="false" aria-labelledby="meowl-settings-no-ui-label" aria-describedby="meowl-settings-no-ui-description" class="meowl-switch"></button>
+    </div>
+  </section>
   <div id="daily-challenge-backdrop" hidden></div>
   <section id="daily-challenge-panel" role="dialog" aria-modal="true" aria-labelledby="daily-challenge-title" tabindex="-1" hidden>
     <div class="daily-challenge-heading">
@@ -1078,6 +1213,7 @@
   <canvas id="floating-meowls" aria-hidden="true"></canvas>
   <script src="daily-challenge.js"></script>
   <script src="friend-control.js"></script>
+  <script src="settings.js"></script>
   <script>
     const audio = document.getElementById("meowl-audio");
     const image = document.getElementById("meowl-image");

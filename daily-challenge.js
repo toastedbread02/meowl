@@ -116,6 +116,10 @@
     return { points: 0, xp: 0, totalCompletions: 0, achievements: [], streak: 0, lastCompletedDate: "", days: {} };
   }
 
+  function isNoUiMode() {
+    return document.body.classList.contains("no-ui-mode");
+  }
+
   function utcNow() {
     return Number.isFinite(serverClockEpoch)
       ? new Date(serverClockEpoch + performance.now() - serverClockPerformance)
@@ -831,7 +835,7 @@
   }
 
   function showAchievementToast(achievement) {
-    if (!toastStack) return;
+    if (!toastStack || isNoUiMode()) return;
     const toast = document.createElement("div");
     toast.className = "meowl-toast";
     const icon = document.createElement("span");
@@ -864,6 +868,7 @@
   }
 
   function queueStreakCelebration(previousStreak, streak, afterToasts) {
+    if (isNoUiMode()) return;
     clearCelebrationTimers();
     celebrationTimers.push(setTimeout(
       () => showStreakCelebration(previousStreak, streak),
@@ -872,7 +877,7 @@
   }
 
   function showStreakCelebration(previousStreak, streak) {
-    if (!streakCelebration) return;
+    if (!streakCelebration || isNoUiMode()) return;
     clearCelebrationTimers();
     streakCelebration.classList.remove("play");
     streakOldNumber.textContent = String(previousStreak);
