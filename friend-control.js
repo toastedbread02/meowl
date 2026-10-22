@@ -138,6 +138,11 @@
     }
   }
 
+  function ownName() {
+    const profile = readStorage(PROFILE_KEY, {});
+    return typeof profile.name === "string" ? profile.name.trim().toLowerCase() : "";
+  }
+
   function addFriend() {
     const name = nameInput.value.trim().slice(0, 24);
     const friend = parseCode(codeInput.value);
@@ -152,6 +157,12 @@
     }
     if (friend.name.toLowerCase() !== name.toLowerCase()) {
       status.textContent = `That code belongs to ${friend.name}. Check the username.`;
+      return;
+    }
+    const me = ownName();
+    if (me && (friend.name.toLowerCase() === me || name.toLowerCase() === me)) {
+      status.textContent = "That's your own profile code — send it to a friend and add theirs instead.";
+      codeInput.focus();
       return;
     }
     const friends = readFriends();
