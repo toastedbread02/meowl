@@ -16,6 +16,7 @@
   const rewardLabel = document.getElementById("daily-challenge-reward");
   const bestLabel = document.getElementById("daily-challenge-best");
   const statusLabel = document.getElementById("daily-challenge-status");
+  const panelStatus = document.getElementById("daily-challenge-panel-status");
   const profileOpenButton = document.getElementById("daily-profile-open");
   const welcomeBackdrop = document.getElementById("daily-welcome-backdrop");
   const welcomePanel = document.getElementById("daily-welcome-panel");
@@ -131,7 +132,7 @@
   async function syncServerClock() {
     if (typeof fetch !== "function" || !window.location?.href) {
       initialClockSyncComplete = true;
-      startButton.disabled = false;
+      refreshChallengeInfo();
       return;
     }
     const abort = typeof AbortController === "function" ? new AbortController() : null;
@@ -160,7 +161,7 @@
     } finally {
       clearTimeout(timeout);
       initialClockSyncComplete = true;
-      startButton.disabled = false;
+      refreshChallengeInfo();
     }
   }
 
@@ -341,6 +342,17 @@
     bestLabel.textContent = day?.bestResult !== null && Number.isFinite(day?.bestResult)
       ? `Today's best: ${day.bestResult}` : "Today's best: —";
     statusLabel.textContent = day?.completed ? "Done today" : "Not done";
+    const completedToday = Boolean(day?.completed);
+    panelStatus.textContent = completedToday
+      ? `Done today${Number.isFinite(day.bestResult) ? ` — best result ${day.bestResult}` : ""}. A new challenge unlocks tomorrow.`
+      : "Not beaten yet today.";
+    panelStatus.dataset.state = completedToday ? "done" : "open";
+    if (!activeChallenge) {
+      startButton.disabled = completedToday || !initialClockSyncComplete;
+      startButton.textContent = completedToday
+        ? "Done for today"
+        : day?.attempts ? "Try Again" : "Start Challenge";
+    }
     showProfileSummary();
     if (!profilePanel.hidden) refreshProfileStats(progress);
     launcher.setAttribute("aria-label", `Daily Challenge: ${challenge.name}`);
@@ -398,6 +410,10 @@
 
   function startChallenge() {
     if (!initialClockSyncComplete) return;
+    if (loadProgress().days[currentDate]?.completed) {
+      refreshChallengeInfo();
+      return;
+    }
     cancelActiveChallenge();
     refreshChallengeInfo();
     const challenge = dailyChallengeFor(currentDate);
@@ -745,7 +761,8 @@
     startButton.hidden = false;
     startButton.textContent = "Try Again";
     refreshChallengeInfo();
-    startButton.focus();
+    if (startButton.disabled) closeButton.focus();
+    else startButton.focus();
   }
 
   function recordResult(runtime, success, score) {

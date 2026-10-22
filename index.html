@@ -507,6 +507,34 @@
 
     #daily-challenge-status { display: inline-block; }
 
+    #daily-challenge-panel-status {
+      margin: 12px 0 0;
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-left: 4px solid #bbb;
+      background: #f7f7f7;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    #daily-challenge-panel-status[data-state="open"] {
+      border-left-color: #ef9d24;
+      background: #fff8ec;
+    }
+
+    #daily-challenge-panel-status[data-state="done"] {
+      border-left-color: #2f9e44;
+      background: #f1fbf3;
+      color: #14532d;
+    }
+
+    #daily-challenge-start:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      background: #eee;
+    }
+
     #daily-challenge-hud {
       display: flex;
       justify-content: space-between;
@@ -941,6 +969,7 @@
     <h3 id="daily-challenge-name"></h3>
     <p id="daily-challenge-instructions"></p>
     <p id="daily-challenge-reward"></p>
+    <p id="daily-challenge-panel-status"></p>
     <button id="daily-challenge-start" type="button">Start Challenge</button>
     <p id="daily-challenge-result" aria-live="assertive" hidden></p>
   </section>
