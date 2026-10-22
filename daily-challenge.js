@@ -17,6 +17,10 @@
   const bestLabel = document.getElementById("daily-challenge-best");
   const statusLabel = document.getElementById("daily-challenge-status");
   const profileOpenButton = document.getElementById("daily-profile-open");
+  const welcomeBackdrop = document.getElementById("daily-welcome-backdrop");
+  const welcomePanel = document.getElementById("daily-welcome-panel");
+  const welcomeNameInput = document.getElementById("daily-welcome-name");
+  const welcomeSaveButton = document.getElementById("daily-welcome-save");
   const profileBackdrop = document.getElementById("daily-profile-backdrop");
   const profilePanel = document.getElementById("daily-profile-panel");
   const profileCloseButton = document.getElementById("daily-profile-close");
@@ -55,26 +59,26 @@
   ];
 
   const challenges = [
-    { id: "survival", name: "Meowl Survival", mode: "dodge", duration: 20, speed: 2.2, spawn: 900, instructions: "Dodge Meowl3 for 20 seconds." },
-    { id: "click-frenzy", name: "Click Frenzy", mode: "clicks", duration: 14, goal: 22, instructions: "Click Meowl 22 times." },
-    { id: "dodge-chaos", name: "Dodge the Chaos", mode: "dodge", duration: 24, speed: 3, spawn: 680, instructions: "Dodge the cats for 24 seconds." },
-    { id: "memory-test", name: "Memory Test", mode: "memory", duration: 28, goal: 5, instructions: "Watch the pads, then repeat." },
-    { id: "precision-clicker", name: "Precision Clicker", mode: "precision", duration: 16, goal: 8, size: 70, move: 750, instructions: "Catch the moving Meowl 8 times." },
-    { id: "dont-click", name: "Don't Click Meowl", mode: "noClick", duration: 16, instructions: "Don't click a Meowl for 16 seconds." },
-    { id: "combo-master", name: "Combo Master", mode: "combo", duration: 16, goal: 10, comboWindow: 900, instructions: "Click 10 times fast." },
-    { id: "tiny-target", name: "Tiny Target Trouble", mode: "precision", duration: 18, goal: 7, size: 48, move: 520, instructions: "Catch the tiny Meowl 7 times." },
-    { id: "meowl-mash", name: "Meowl Mash", mode: "clicks", duration: 18, goal: 30, instructions: "Click Meowl 30 times." },
-    { id: "simon-meowl", name: "Simon Says Meowl", mode: "memory", duration: 30, goal: 6, instructions: "Watch, then repeat the sequence." },
-    { id: "quiet-king", name: "The Quiet Cat", mode: "noClick", duration: 20, instructions: "Don't click anything for 20 seconds." },
-    { id: "meowl-parade", name: "Meowl Parade Survival", mode: "dodge", duration: 28, speed: 2.7, spawn: 760, instructions: "Dodge the parade for 28 seconds." },
-    { id: "precision-paws", name: "Precision Paws", mode: "precision", duration: 20, goal: 10, size: 56, move: 600, instructions: "Catch 10 moving Meowls." },
-    { id: "combo-cat", name: "Combo Cat", mode: "combo", duration: 20, goal: 14, comboWindow: 700, instructions: "Click 14 times fast." },
-    { id: "nap-trap", name: "Meowl's Nap Trap", mode: "noClick", duration: 18, instructions: "Don't click for 18 seconds." },
-    { id: "maximum-chaos", name: "Maximum Meowl Chaos", mode: "dodge", duration: 30, speed: 3.4, spawn: 570, instructions: "Dodge for 30 seconds." },
-    { id: "click-storm", name: "Click Storm", mode: "clicks", duration: 17, goal: 28, instructions: "Click Meowl 28 times." },
-    { id: "blink-memory", name: "Blink and Remember", mode: "memory", duration: 24, goal: 5, instructions: "Repeat the pad sequence." },
-    { id: "blink-target", name: "Blink and You'll Miss It", mode: "precision", duration: 13, goal: 6, size: 44, move: 390, instructions: "Catch Meowl 6 times." },
-    { id: "final-stand", name: "The Final Meowl Stand", mode: "dodge", duration: 32, speed: 3.8, spawn: 540, instructions: "Dodge the swarm for 32 seconds." }
+    { id: "survival", name: "Meowl Survival", mode: "dodge", duration: 15, speed: 1.5, spawn: 1200, instructions: "Dodge Meowl3 for 15 seconds." },
+    { id: "click-frenzy", name: "Click Frenzy", mode: "clicks", duration: 18, goal: 12, instructions: "Click Meowl 12 times." },
+    { id: "dodge-chaos", name: "Dodge the Chaos", mode: "dodge", duration: 18, speed: 1.8, spawn: 1000, instructions: "Dodge the cats for 18 seconds." },
+    { id: "memory-test", name: "Memory Test", mode: "memory", duration: 30, goal: 3, instructions: "Watch the pads, then repeat." },
+    { id: "precision-clicker", name: "Precision Clicker", mode: "precision", duration: 20, goal: 5, size: 80, move: 1000, instructions: "Catch the moving Meowl 5 times." },
+    { id: "dont-click", name: "Don't Click Meowl", mode: "noClick", duration: 12, instructions: "Don't click a Meowl for 12 seconds." },
+    { id: "combo-master", name: "Combo Master", mode: "combo", duration: 18, goal: 6, comboWindow: 1200, instructions: "Click 6 times fast." },
+    { id: "tiny-target", name: "Tiny Target Trouble", mode: "precision", duration: 20, goal: 5, size: 58, move: 800, instructions: "Catch the tiny Meowl 5 times." },
+    { id: "meowl-mash", name: "Meowl Mash", mode: "clicks", duration: 20, goal: 18, instructions: "Click Meowl 18 times." },
+    { id: "simon-meowl", name: "Simon Says Meowl", mode: "memory", duration: 35, goal: 4, instructions: "Watch, then repeat the sequence." },
+    { id: "quiet-king", name: "The Quiet Cat", mode: "noClick", duration: 15, instructions: "Don't click anything for 15 seconds." },
+    { id: "meowl-parade", name: "Meowl Parade Survival", mode: "dodge", duration: 20, speed: 1.8, spawn: 1050, instructions: "Dodge the parade for 20 seconds." },
+    { id: "precision-paws", name: "Precision Paws", mode: "precision", duration: 24, goal: 6, size: 70, move: 850, instructions: "Catch 6 moving Meowls." },
+    { id: "combo-cat", name: "Combo Cat", mode: "combo", duration: 24, goal: 8, comboWindow: 1000, instructions: "Click 8 times fast." },
+    { id: "nap-trap", name: "Meowl's Nap Trap", mode: "noClick", duration: 14, instructions: "Don't click for 14 seconds." },
+    { id: "maximum-chaos", name: "Maximum Meowl Chaos", mode: "dodge", duration: 20, speed: 2.2, spawn: 850, instructions: "Dodge for 20 seconds." },
+    { id: "click-storm", name: "Click Storm", mode: "clicks", duration: 20, goal: 18, instructions: "Click Meowl 18 times." },
+    { id: "blink-memory", name: "Blink and Remember", mode: "memory", duration: 30, goal: 3, instructions: "Repeat the pad sequence." },
+    { id: "blink-target", name: "Blink and You'll Miss It", mode: "precision", duration: 17, goal: 4, size: 54, move: 550, instructions: "Catch Meowl 4 times." },
+    { id: "final-stand", name: "The Final Meowl Stand", mode: "dodge", duration: 22, speed: 2.5, spawn: 800, instructions: "Dodge the swarm for 22 seconds." }
   ];
 
   const winMessages = [
@@ -93,7 +97,7 @@
   ];
 
   let cachedProgress = emptyProgress();
-  let cachedProfile = { name: "Meowl player", avatar: "" };
+  let cachedProfile = { name: "", avatar: "" };
   let selectedAvatar = "";
   let activeChallenge = null;
   let rolloverTimer;
@@ -125,8 +129,12 @@
       startButton.disabled = false;
       return;
     }
+    const abort = typeof AbortController === "function" ? new AbortController() : null;
+    const timeout = abort ? setTimeout(() => abort.abort(), 5000) : 0;
     try {
-      const response = await fetch(window.location.href, { method: "HEAD", cache: "no-store" });
+      const response = await fetch(window.location.href, {
+        method: "HEAD", cache: "no-store", ...(abort ? { signal: abort.signal } : {})
+      });
       const serverTime = Date.parse(response.headers.get("Date"));
       if (!Number.isFinite(serverTime)) return;
       serverClockEpoch = serverTime;
@@ -145,6 +153,7 @@
     } catch {
       // Fall back to the device's UTC clock if the site date cannot be reached.
     } finally {
+      clearTimeout(timeout);
       initialClockSyncComplete = true;
       startButton.disabled = false;
     }
@@ -199,7 +208,7 @@
       const parsed = JSON.parse(saved);
       if (!parsed || typeof parsed !== "object") return cachedProfile;
       return {
-        name: typeof parsed.name === "string" ? parsed.name.slice(0, 24) || "Meowl player" : "Meowl player",
+        name: typeof parsed.name === "string" ? parsed.name.trim().slice(0, 24) : "",
         avatar: typeof parsed.avatar === "string" && parsed.avatar.startsWith("data:image/") ? parsed.avatar : ""
       };
     } catch {
@@ -208,7 +217,7 @@
   }
 
   function showProfileSummary(profile = loadProfile()) {
-    profileSummaryName.textContent = profile.name;
+    profileSummaryName.textContent = profile.name ? `Profile: ${profile.name}` : "Profile";
     profileSmallAvatar.hidden = !profile.avatar;
     if (profile.avatar) profileSmallAvatar.src = profile.avatar;
   }
@@ -263,6 +272,40 @@
       profileSaveStatus.textContent = "Couldn't save on this device";
     }
     showProfileSummary(profile);
+    updateCursorColor(profile.name);
+    if (typeof window.dispatchEvent === "function") {
+      window.dispatchEvent(new CustomEvent("meowl-profile-updated"));
+    }
+  }
+
+  function updateCursorColor(name) {
+    const palette = ["#22c55e", "#f97316", "#eab308", "#3b82f6", "#a855f7", "#ec4899", "#14b8a6", "#ef4444", "#84cc16", "#fb7185", "#facc15", "#06b6d4", "#8b5cf6", "#d946ef", "#2dd4bf", "#f43f5e", "#65a30d", "#ea580c", "#c026d3", "#0ea5e9", "#a3e635", "#fda4af", "#0891b2", "#c084fc", "#e11d48", "#16a34a"];
+    const counts = new Map();
+    let mostUsed = "a";
+    let highest = 0;
+    for (const char of name.toLowerCase()) {
+      if (!/[a-z]/.test(char)) continue;
+      const count = (counts.get(char) || 0) + 1;
+      counts.set(char, count);
+      if (count > highest) { mostUsed = char; highest = count; }
+    }
+    const color = palette[mostUsed.charCodeAt(0) - 97];
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><circle cx="9" cy="9" r="7" fill="${color}" stroke="white" stroke-width="2"/></svg>`;
+    document.documentElement.style.setProperty("--meowl-user-cursor", `url("data:image/svg+xml,${encodeURIComponent(svg)}") 9 9, auto`);
+  }
+
+  function completeWelcome() {
+    const name = welcomeNameInput.value.trim().slice(0, 24);
+    if (!name) {
+      welcomeNameInput.focus();
+      return;
+    }
+    selectedAvatar = loadProfile().avatar;
+    profileNameInput.value = name;
+    saveProfile();
+    welcomePanel.hidden = true;
+    welcomeBackdrop.hidden = true;
+    launcher.focus();
   }
 
   function readProfilePicture(file) {
@@ -792,6 +835,10 @@
   profileBackdrop.addEventListener("click", closeProfile);
   profileSaveButton.addEventListener("click", saveProfile);
   profilePictureInput.addEventListener("change", () => readProfilePicture(profilePictureInput.files?.[0]));
+  welcomeSaveButton.addEventListener("click", completeWelcome);
+  welcomeNameInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") completeWelcome();
+  });
   startButton.addEventListener("click", startChallenge);
   arena.addEventListener("click", (event) => {
     const target = event.target.closest("[data-daily-action]");
@@ -805,6 +852,10 @@
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
+      if (!welcomePanel.hidden) {
+        event.preventDefault();
+        return;
+      }
       if (!profilePanel.hidden) closeProfile();
       else if (!panel.hidden || !game.hidden) closePanel();
     }
@@ -813,7 +864,14 @@
   gameCloseButton.addEventListener("click", closePanel);
 
   startButton.disabled = true;
-  showProfileSummary();
+  const savedProfile = loadProfile();
+  showProfileSummary(savedProfile);
+  updateCursorColor(savedProfile.name);
+  if (!savedProfile.name) {
+    welcomeBackdrop.hidden = false;
+    welcomePanel.hidden = false;
+    welcomeNameInput.focus();
+  }
   refreshChallengeInfo();
   scheduleDateRollover();
   syncServerClock();

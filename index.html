@@ -13,6 +13,8 @@
       user-select: none;
     }
 
+    body, body * { cursor: var(--meowl-user-cursor, auto) !important; }
+
     html,
     body {
       width: 100%;
@@ -353,9 +355,74 @@
     #daily-profile-achievements { margin-top: 10px; }
     #daily-profile-achievements summary { cursor: pointer; }
 
-    .daily-profile-summary { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
-    .daily-profile-summary img { width: 28px; height: 28px; border: 1px solid #bbb; border-radius: 50%; object-fit: cover; }
-    .daily-profile-summary button { margin-left: auto; }
+    #daily-profile-open,
+    #meowl-friends-open {
+      position: fixed;
+      right: 14px;
+      z-index: 13;
+      min-height: 40px;
+      padding: 7px 11px;
+      border: 1px solid #222;
+      border-radius: 3px;
+      background: #fff;
+      color: #111;
+      font: 14px system-ui, sans-serif;
+    }
+    #daily-profile-open { bottom: 14px; display: flex; align-items: center; gap: 7px; }
+    #daily-profile-open { max-width: min(48vw, 230px); overflow: hidden; }
+    #daily-profile-summary-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #meowl-friends-open { bottom: 62px; }
+    #daily-profile-small-avatar { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+    #daily-profile-small-avatar[hidden],
+    #daily-profile-avatar-preview[hidden] { display: none; }
+
+    #daily-welcome-backdrop,
+    #meowl-friends-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 18;
+      background: rgba(0, 0, 0, .65);
+    }
+    #daily-welcome-panel,
+    #meowl-friends-panel {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      z-index: 19;
+      box-sizing: border-box;
+      width: min(420px, calc(100vw - 24px));
+      max-height: 90dvh;
+      overflow: auto;
+      padding: 16px;
+      border: 1px solid #aaa;
+      background: white;
+      color: #111;
+      font: 16px/1.4 system-ui, sans-serif;
+      transform: translate(-50%, -50%);
+    }
+    #daily-welcome-backdrop[hidden],
+    #daily-welcome-panel[hidden],
+    #meowl-friends-backdrop[hidden],
+    #meowl-friends-panel[hidden] { display: none; }
+    #daily-welcome-panel input,
+    #meowl-friends-panel textarea { box-sizing: border-box; width: 100%; padding: 9px; font: inherit; }
+    #daily-welcome-panel button,
+    #meowl-friends-panel button { min-height: 40px; margin: 6px 4px 6px 0; padding: 7px 12px; border: 1px solid #222; border-radius: 3px; background: #eee; font: inherit; }
+    #meowl-friends-panel textarea { min-height: 90px; margin: 6px 0; resize: vertical; font: 12px/1.3 monospace; }
+    #meowl-friends-status { display: block; min-height: 1.4em; margin: 8px 0; }
+    #meowl-remote-cursor {
+      position: fixed;
+      z-index: 17;
+      display: none;
+      pointer-events: none;
+      color: #111;
+      font: 12px/1 system-ui, sans-serif;
+      filter: drop-shadow(0 1px 2px white);
+    }
+    #meowl-remote-cursor.visible { display: block; }
+    #meowl-remote-cursor-dot { display: block; width: 16px; height: 16px; border: 2px solid white; border-radius: 50%; background: var(--remote-color, #22c55e); }
+    #meowl-friend-view { position: fixed; inset: 0; z-index: 16; width: 100vw; height: 100dvh; object-fit: fill; pointer-events: none; background: #000; }
+    #meowl-friend-view[hidden] { display: none; }
 
     #daily-challenge-game {
       position: fixed;
@@ -551,6 +618,8 @@
 
     @media (max-width: 480px) {
       #daily-challenge-launch { bottom: 10px; left: 10px; padding: 10px 12px; font-size: 14px; }
+      #daily-profile-open { right: 10px; bottom: 10px; }
+      #meowl-friends-open { right: 10px; bottom: 56px; }
       #daily-challenge-panel { padding: 14px; }
     }
 
@@ -570,6 +639,8 @@
     <button type="button" data-trigger-event="admin">Start Admin Abuse</button>
   </section>
   <button id="daily-challenge-launch" type="button">🎯 Daily Challenge</button>
+  <button id="meowl-friends-open" type="button">Friends</button>
+  <button id="daily-profile-open" type="button"><img id="daily-profile-small-avatar" alt="" hidden><span id="daily-profile-summary-name">Profile</span></button>
   <div id="daily-challenge-backdrop" hidden></div>
   <section id="daily-challenge-panel" role="dialog" aria-modal="true" aria-labelledby="daily-challenge-title" tabindex="-1" hidden>
     <div class="daily-challenge-heading">
@@ -579,16 +650,18 @@
       </div>
       <button id="daily-challenge-close" type="button" aria-label="Close challenge">✕</button>
     </div>
-    <div class="daily-profile-summary">
-      <img id="daily-profile-small-avatar" alt="" hidden>
-      <span id="daily-profile-summary-name">Meowl player</span>
-      <button id="daily-profile-open" type="button">Profile &amp; stats</button>
-    </div>
     <h3 id="daily-challenge-name"></h3>
     <p id="daily-challenge-instructions"></p>
     <p id="daily-challenge-reward"></p>
     <button id="daily-challenge-start" type="button">Start Challenge</button>
     <p id="daily-challenge-result" aria-live="assertive" hidden></p>
+  </section>
+  <div id="daily-welcome-backdrop" hidden></div>
+  <section id="daily-welcome-panel" role="dialog" aria-modal="true" aria-labelledby="daily-welcome-title" hidden>
+    <h2 id="daily-welcome-title">Pick a username</h2>
+    <p>It shows up on your profile and when you play with a friend.</p>
+    <input id="daily-welcome-name" type="text" maxlength="24" autocomplete="nickname" placeholder="Your name">
+    <button id="daily-welcome-save" type="button">Continue</button>
   </section>
   <div id="daily-profile-backdrop" hidden></div>
   <section id="daily-profile-panel" role="dialog" aria-modal="true" aria-labelledby="daily-profile-title" hidden>
@@ -614,6 +687,23 @@
       <details id="daily-profile-achievements"><summary id="daily-profile-achievement-summary">Achievements</summary><ul id="daily-profile-achievement-list"></ul></details>
     </div>
   </section>
+  <div id="meowl-friends-backdrop" hidden></div>
+  <section id="meowl-friends-panel" role="dialog" aria-modal="true" aria-labelledby="meowl-friends-title" hidden>
+    <div class="daily-profile-heading"><h2 id="meowl-friends-title">Play with a friend</h2><button id="meowl-friends-close" type="button">Close</button></div>
+    <p>Share codes to connect. Choose this tab when asked to share your screen. Your friend can see and control this page.</p>
+    <button id="meowl-friends-create" type="button">Share tab + invite</button>
+    <label for="meowl-friends-code">Paste their code here</label>
+    <textarea id="meowl-friends-code" spellcheck="false"></textarea>
+    <button id="meowl-friends-join" type="button">Join friend</button>
+    <button id="meowl-friends-connect" type="button">Connect answer</button>
+    <label for="meowl-friends-share">Your code</label>
+    <textarea id="meowl-friends-share" readonly spellcheck="false"></textarea>
+    <button id="meowl-friends-copy" type="button">Copy code</button>
+    <button id="meowl-friends-stop" type="button">Disconnect</button>
+    <span id="meowl-friends-status" role="status">Not connected</span>
+  </section>
+  <div id="meowl-remote-cursor" aria-hidden="true"><span id="meowl-remote-cursor-dot"></span><span id="meowl-remote-cursor-name"></span></div>
+  <video id="meowl-friend-view" autoplay playsinline hidden></video>
   <div id="daily-challenge-game" hidden>
     <div id="daily-challenge-hud"><span id="daily-challenge-clock"></span><span id="daily-challenge-score"></span></div>
     <button id="daily-challenge-close-game" type="button" aria-label="Exit challenge">Exit</button>
@@ -638,6 +728,7 @@
   <audio id="disco-audio" src="disco.mp3" preload="auto"></audio>
   <canvas id="floating-meowls" aria-hidden="true"></canvas>
   <script src="daily-challenge.js"></script>
+  <script src="friend-control.js"></script>
   <script>
     const audio = document.getElementById("meowl-audio");
     const image = document.getElementById("meowl-image");
