@@ -46,6 +46,11 @@
   const gameTip = document.getElementById("daily-challenge-game-tip");
   const arena = document.getElementById("daily-challenge-arena");
   const result = document.getElementById("daily-challenge-result");
+  const toastStack = document.getElementById("meowl-toast-stack");
+  const streakCelebration = document.getElementById("streak-celebration");
+  const streakOldNumber = document.getElementById("streak-count-old");
+  const streakNewNumber = document.getElementById("streak-count-new");
+  const streakCountLabel = document.getElementById("streak-count-label");
   const meowlSource = "meowl3.png";
   const XP_PER_LEVEL = 250;
   const achievements = [
@@ -332,7 +337,7 @@
     dateLabel.textContent = prettyDate;
     nameLabel.textContent = challenge.name;
     instructionsLabel.textContent = challenge.instructions;
-    rewardLabel.textContent = `${REWARD_POINTS} points + 50 XP for your first win today.`;
+    rewardLabel.textContent = `${REWARD_POINTS} points + ${XP_PER_LEVEL} XP (a full level) for your first win today — leveling up once a day keeps your streak alive.`;
     bestLabel.textContent = day?.bestResult !== null && Number.isFinite(day?.bestResult)
       ? `Today's best: ${day.bestResult}` : "Today's best: —";
     statusLabel.textContent = day?.completed ? "Done today" : "Not done";
@@ -749,6 +754,7 @@
     const day = progress.days[date] || {
       challengeId: runtime.challenge.id,
       completed: false,
+      leveledUp: false,
       attempts: 0,
       bestResult: null,
       pointsAwarded: 0
@@ -757,6 +763,8 @@
     day.lastResult = success ? "completed" : "failed";
     day.lastScore = score;
     if (Number.isFinite(score) && (day.bestResult === null || score > day.bestResult)) day.bestResult = score;
+    const levelBefore = Math.floor(progress.xp / XP_PER_LEVEL);
+    const streakBefore = progress.streak;
     let earnedNow = false;
     let xpEarned = 0;
     if (success && !day.completed) {
@@ -764,20 +772,26 @@
       day.completedAt = utcNow().toISOString();
       day.pointsAwarded = REWARD_POINTS;
       progress.points += REWARD_POINTS;
-      progress.xp += 50;
-      xpEarned += 50;
+      progress.xp += XP_PER_LEVEL;
+      xpEarned += XP_PER_LEVEL;
       progress.totalCompletions += 1;
-      if (progress.lastCompletedDate === dateOffset(date, -1)) progress.streak += 1;
-      else if (progress.lastCompletedDate !== date) progress.streak = 1;
-      progress.lastCompletedDate = date;
       earnedNow = true;
     }
+    if (success && Math.floor(progress.xp / XP_PER_LEVEL) > levelBefore) day.leveledUp = true;
+    let streakGained = false;
+    if (day.leveledUp && progress.lastCompletedDate !== date) {
+      progress.streak = progress.lastCompletedDate === dateOffset(date, -1) ? progress.streak + 1 : 1;
+      progress.lastCompletedDate = date;
+      streakGained = true;
+    }
+    const unlocked = [];
     if (success) {
       for (const achievement of achievements) {
         if (!progress.achievements.includes(achievement.id) && achievement.test(progress, runtime)) {
           progress.achievements.push(achievement.id);
           progress.xp += achievement.xp;
           xpEarned += achievement.xp;
+          unlocked.push(achievement);
         }
       }
     }
@@ -785,12 +799,97 @@
     const oldDates = Object.keys(progress.days).sort();
     for (const oldDate of oldDates.slice(0, Math.max(0, oldDates.length - 90))) delete progress.days[oldDate];
     saveProgress(progress);
+    const streakNote = streakGained ? ` Streak: ${progress.streak} day${progress.streak === 1 ? "" : "s"}.` : "";
     if (success) {
       result.textContent = earnedNow
-        ? `${gameTip.textContent} +${REWARD_POINTS} points and +${xpEarned} XP! Best result: ${day.bestResult}.`
-        : `${gameTip.textContent} ${day.completed ? "Today's points are already banked." : ""} Best result: ${day.bestResult}.`;
+        ? `${gameTip.textContent} +${REWARD_POINTS} points and +${xpEarned} XP!${streakNote} Best result: ${day.bestResult}.`
+        : `${gameTip.textContent} ${day.completed ? "Today's points are already banked." : ""}${streakNote} Best result: ${day.bestResult}.`;
     } else {
       result.textContent = `${gameTip.textContent} Result: ${score}. Best: ${day.bestResult ?? "—"}.`;
+    }
+    unlocked.forEach((achievement) => showAchievementToast(achievement));
+    if (streakGained) {
+      queueStreakCelebration(progress.streak > 1 ? streakBefore : 0, progress.streak, unlocked.length > 0);
+    }
+  }
+
+  function showAchievementToast(achievement) {
+    if (!toastStack) return;
+    const toast = document.createElement("div");
+    toast.className = "meowl-toast";
+    const icon = document.createElement("span");
+    icon.className = "meowl-toast-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = "🏆";
+    const text = document.createElement("span");
+    text.className = "meowl-toast-text";
+    const heading = document.createElement("span");
+    heading.className = "meowl-toast-title";
+    heading.textContent = "Achievement unlocked!";
+    const detail = document.createElement("span");
+    detail.className = "meowl-toast-sub";
+    detail.textContent = `${achievement.name} · +${achievement.xp} XP`;
+    text.append(heading, detail);
+    toast.append(icon, text);
+    toastStack.append(toast);
+    while (toastStack.children.length > 3) toastStack.firstElementChild.remove();
+    setTimeout(() => {
+      toast.classList.add("is-leaving");
+      setTimeout(() => toast.remove(), 320);
+    }, 4200);
+  }
+
+  let celebrationTimers = [];
+
+  function clearCelebrationTimers() {
+    celebrationTimers.forEach(clearTimeout);
+    celebrationTimers = [];
+  }
+
+  function queueStreakCelebration(previousStreak, streak, afterToasts) {
+    clearCelebrationTimers();
+    celebrationTimers.push(setTimeout(
+      () => showStreakCelebration(previousStreak, streak),
+      afterToasts ? 900 : 320
+    ));
+  }
+
+  function showStreakCelebration(previousStreak, streak) {
+    if (!streakCelebration) return;
+    clearCelebrationTimers();
+    streakCelebration.classList.remove("play");
+    streakCelebration.querySelectorAll(".streak-spark").forEach((spark) => spark.remove());
+    streakOldNumber.textContent = String(previousStreak);
+    streakNewNumber.textContent = String(streak);
+    streakCountLabel.textContent = streak === 1 ? "day streak started" : "day streak";
+    streakCelebration.hidden = false;
+    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reducedMotion) spawnStreakSparks(streakCelebration.querySelector(".streak-stage"));
+    void streakCelebration.offsetWidth;
+    streakCelebration.classList.add("play");
+    celebrationTimers.push(setTimeout(() => {
+      streakCelebration.hidden = true;
+      streakCelebration.classList.remove("play");
+      streakCelebration.querySelectorAll(".streak-spark").forEach((spark) => spark.remove());
+    }, reducedMotion ? 1800 : 3400));
+  }
+
+  function spawnStreakSparks(stage) {
+    if (!stage) return;
+    const colors = ["#ffe6a3", "#ffd166", "#ffb347", "#ff7a1a"];
+    for (let index = 0; index < 18; index += 1) {
+      const spark = document.createElement("span");
+      spark.className = "streak-spark";
+      spark.setAttribute("aria-hidden", "true");
+      spark.style.setProperty("--spark-size", `${(4 + Math.random() * 6).toFixed(1)}px`);
+      spark.style.setProperty("--spark-x", `${((Math.random() - 0.5) * 190).toFixed(0)}px`);
+      spark.style.setProperty("--spark-y", `${(-90 - Math.random() * 150).toFixed(0)}px`);
+      spark.style.setProperty("--spark-delay", `${(0.52 + Math.random() * 0.9).toFixed(2)}s`);
+      spark.style.setProperty("--spark-duration", `${(1.1 + Math.random() * 0.9).toFixed(2)}s`);
+      spark.style.setProperty("--spark-color", colors[index % colors.length]);
+      spark.style.left = `${(50 + (Math.random() - 0.5) * 18).toFixed(1)}%`;
+      spark.style.top = `${(58 + (Math.random() - 0.5) * 14).toFixed(1)}%`;
+      stage.append(spark);
     }
   }
 
