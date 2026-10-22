@@ -272,26 +272,9 @@
       profileSaveStatus.textContent = "Couldn't save on this device";
     }
     showProfileSummary(profile);
-    updateCursorColor(profile.name);
     if (typeof window.dispatchEvent === "function") {
       window.dispatchEvent(new CustomEvent("meowl-profile-updated"));
     }
-  }
-
-  function updateCursorColor(name) {
-    const palette = ["#22c55e", "#f97316", "#eab308", "#3b82f6", "#a855f7", "#ec4899", "#14b8a6", "#ef4444", "#84cc16", "#fb7185", "#facc15", "#06b6d4", "#8b5cf6", "#d946ef", "#2dd4bf", "#f43f5e", "#65a30d", "#ea580c", "#c026d3", "#0ea5e9", "#a3e635", "#fda4af", "#0891b2", "#c084fc", "#e11d48", "#16a34a"];
-    const counts = new Map();
-    let mostUsed = "a";
-    let highest = 0;
-    for (const char of name.toLowerCase()) {
-      if (!/[a-z]/.test(char)) continue;
-      const count = (counts.get(char) || 0) + 1;
-      counts.set(char, count);
-      if (count > highest) { mostUsed = char; highest = count; }
-    }
-    const color = palette[mostUsed.charCodeAt(0) - 97];
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><circle cx="9" cy="9" r="7" fill="${color}" stroke="white" stroke-width="2"/></svg>`;
-    document.documentElement.style.setProperty("--meowl-user-cursor", `url("data:image/svg+xml,${encodeURIComponent(svg)}") 9 9, auto`);
   }
 
   function completeWelcome() {
@@ -866,7 +849,6 @@
   startButton.disabled = true;
   const savedProfile = loadProfile();
   showProfileSummary(savedProfile);
-  updateCursorColor(savedProfile.name);
   if (!savedProfile.name) {
     welcomeBackdrop.hidden = false;
     welcomePanel.hidden = false;
