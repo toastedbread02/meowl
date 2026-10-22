@@ -405,16 +405,21 @@
     #meowl-friends-backdrop[hidden],
     #meowl-friends-panel[hidden] { display: none; }
     #daily-welcome-panel input,
+    #meowl-friends-panel input,
     #meowl-friends-panel textarea { box-sizing: border-box; width: 100%; padding: 9px; font: inherit; }
     #daily-welcome-panel button,
     #meowl-friends-panel button { min-height: 40px; margin: 6px 4px 6px 0; padding: 7px 12px; border: 1px solid #222; border-radius: 3px; background: #eee; font: inherit; }
-    #meowl-friends-panel textarea { min-height: 90px; margin: 6px 0; resize: vertical; font: 12px/1.3 monospace; }
+    #meowl-friends-my-id-row { display: flex; gap: 8px; align-items: center; margin: 4px 0 12px; }
+    #meowl-friends-my-id { flex: 1; padding: 8px 10px; border: 1px dashed #999; background: #f6f6f6; font: 13px/1.3 monospace; letter-spacing: .06em; overflow-wrap: anywhere; }
+    #meowl-friends-copy-id { margin: 0; white-space: nowrap; }
     #meowl-friends-status { display: block; min-height: 1.4em; margin: 8px 0; }
-    #meowl-friends-panel input[type="text"] { box-sizing: border-box; width: 100%; padding: 9px; font: inherit; }
     #meowl-friends-list { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
     .meowl-friend-card { padding: 10px; border: 1px solid #ccc; }
     .meowl-friend-card h3 { margin: 0 0 6px; font-size: 1rem; }
     .meowl-friend-card p { margin: 3px 0; }
+    .meowl-friend-card .meowl-friend-meta { margin-top: 6px; color: #666; font-size: .78rem; }
+    .meowl-friend-card .meowl-friend-meta[data-stale="true"] { color: #96620a; }
+    #meowl-friends-list > .meowl-friend-meta { margin: 0; color: #666; font-size: .78rem; }
 
     #daily-challenge-game {
       position: fixed;
@@ -1127,7 +1132,7 @@
     <img id="daily-profile-avatar-preview" alt="Profile picture preview" hidden>
     <input id="daily-profile-picture-input" type="file" accept="image/*">
     <button id="daily-profile-save" type="button">Save</button>
-    <button id="daily-profile-share-code" type="button">Copy friend profile code</button>
+    <button id="daily-profile-share-code" type="button">Copy my friend ID</button>
     <span id="daily-profile-save-status" role="status"></span>
     <div id="daily-profile-stats">
       <p id="daily-challenge-status">Not done</p>
@@ -1143,11 +1148,14 @@
   <div id="meowl-friends-backdrop" hidden></div>
   <section id="meowl-friends-panel" role="dialog" aria-modal="true" aria-labelledby="meowl-friends-title" hidden>
     <div class="daily-profile-heading"><h2 id="meowl-friends-title">Friends</h2><button id="meowl-friends-close" type="button">Close</button></div>
-    <p>Add a friend with their username and profile code. Ask them to copy the code from Profile.</p>
-    <label for="meowl-friends-name">Username</label>
-    <input id="meowl-friends-name" type="text" maxlength="24" autocomplete="off" placeholder="Friend's username">
-    <label for="meowl-friends-code">Friend profile code</label>
-    <textarea id="meowl-friends-code" spellcheck="false" placeholder="Paste their profile code"></textarea>
+    <p>Add a friend once with their friend ID. Their points, XP and achievements update on their own from then on.</p>
+    <label id="meowl-friends-my-id-label">Your friend ID</label>
+    <div id="meowl-friends-my-id-row">
+      <code id="meowl-friends-my-id" aria-labelledby="meowl-friends-my-id-label"></code>
+      <button id="meowl-friends-copy-id" type="button">Copy</button>
+    </div>
+    <label for="meowl-friends-id">Friend ID</label>
+    <input id="meowl-friends-id" type="text" maxlength="5000" autocomplete="off" spellcheck="false" placeholder="Paste their friend ID">
     <button id="meowl-friends-add" type="button">Add friend</button>
     <span id="meowl-friends-status" role="status"></span>
     <ul id="meowl-friends-list" aria-label="Friends list"></ul>
